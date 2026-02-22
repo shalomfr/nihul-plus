@@ -11,10 +11,8 @@ async function main() {
   if (existingOrg) {
     console.log("Cleaning existing seed data...");
     await prisma.adminEvent.deleteMany({ where: { organizationId: existingOrg.id } });
-    await prisma.expense.deleteMany({ where: { organizationId: existingOrg.id } });
-    await prisma.bankTransaction.deleteMany({ where: { bankAccount: { organizationId: existingOrg.id } } });
-    await prisma.bankTransfer.deleteMany({ where: { organizationId: existingOrg.id } });
-    await prisma.bankAccount.deleteMany({ where: { organizationId: existingOrg.id } });
+    // Banking data (accounts, transactions, transfers, expenses) is NOT cleaned —
+    // it contains real data from bank scraper sync and manual entry.
     await prisma.finandaConnection.deleteMany({ where: { organizationId: existingOrg.id } });
     await prisma.executionStepLog.deleteMany({ where: { execution: { organizationId: existingOrg.id } } });
     await prisma.workflowExecution.deleteMany({ where: { organizationId: existingOrg.id } });
@@ -556,159 +554,9 @@ async function main() {
   }
   console.log("Created 8 workflow executions");
 
-  // ==================== BANK ACCOUNTS ====================
-  const bankAccount1 = await prisma.bankAccount.create({
-    data: {
-      organizationId: org.id,
-      bankName: "בנק הפועלים",
-      bankCode: 12,
-      branchNumber: "621",
-      accountNumber: "123456",
-      balance: 245830.50,
-      availableBalance: 245830.50,
-      currency: "ILS",
-      isPrimary: true,
-      lastSyncAt: new Date("2026-02-22T10:30:00"),
-    },
-  });
-
-  const bankAccount2 = await prisma.bankAccount.create({
-    data: {
-      organizationId: org.id,
-      bankName: "בנק לאומי",
-      bankCode: 10,
-      branchNumber: "800",
-      accountNumber: "789012",
-      balance: 87450.00,
-      availableBalance: 87450.00,
-      currency: "ILS",
-      isPrimary: false,
-      lastSyncAt: new Date("2026-02-22T10:30:00"),
-    },
-  });
-  console.log("Created 2 bank accounts");
-
-  // ==================== BANK TRANSACTIONS ====================
-  const txData = [
-    { accountId: bankAccount1.id, amount: 15000, direction: "CREDIT", description: "תרומה - אברהם כהן", counterpartyName: "אברהם כהן", valueDate: "2026-02-20", bookingDate: "2026-02-20", balance: 245830.50, state: "booked" },
-    { accountId: bankAccount1.id, amount: 8500, direction: "DEBIT", description: "שכירות משרד - פברואר", counterpartyName: "נכסי ירושלים בע\"מ", valueDate: "2026-02-01", bookingDate: "2026-02-01", balance: 230830.50, state: "booked" },
-    { accountId: bankAccount1.id, amount: 25000, direction: "DEBIT", description: "משכורות - ינואר", counterpartyName: "שירות משכורות", valueDate: "2026-02-10", bookingDate: "2026-02-10", balance: 222330.50, state: "booked" },
-    { accountId: bankAccount1.id, amount: 3200, direction: "DEBIT", description: "ציוד משרדי", counterpartyName: "אופיס דיפו", valueDate: "2026-02-15", bookingDate: "2026-02-15", balance: 247330.50, state: "booked" },
-    { accountId: bankAccount1.id, amount: 50000, direction: "CREDIT", description: "תרומה - קרן משפחת מזרחי", counterpartyName: "קרן מזרחי", valueDate: "2026-02-18", bookingDate: "2026-02-18", balance: 250530.50, state: "booked" },
-    { accountId: bankAccount1.id, amount: 1800, direction: "DEBIT", description: "חשמל", counterpartyName: "חברת החשמל", valueDate: "2026-02-05", bookingDate: "2026-02-05", balance: 239330.50, state: "booked" },
-    { accountId: bankAccount2.id, amount: 10000, direction: "CREDIT", description: "העברה פנימית", counterpartyName: "בנק הפועלים", valueDate: "2026-02-12", bookingDate: "2026-02-12", balance: 87450.00, state: "booked" },
-    { accountId: bankAccount2.id, amount: 4500, direction: "DEBIT", description: "ביטוח שנתי", counterpartyName: "הראל ביטוח", valueDate: "2026-02-08", bookingDate: "2026-02-08", balance: 77450.00, state: "booked" },
-    { accountId: bankAccount1.id, amount: 2500, direction: "DEBIT", description: "שירותי ייעוץ משפטי", counterpartyName: "משרד עו\"ד כהן", valueDate: "2026-02-19", bookingDate: "2026-02-19", balance: 248030.50, state: "booked" },
-    { accountId: bankAccount1.id, amount: 7200, direction: "CREDIT", description: "תרומה - שרה לוי", counterpartyName: "שרה לוי", valueDate: "2026-02-21", bookingDate: "2026-02-22", balance: 245830.50, state: "pending" },
-  ];
-
-  for (const tx of txData) {
-    await prisma.bankTransaction.create({
-      data: {
-        bankAccountId: tx.accountId,
-        amount: tx.amount,
-        direction: tx.direction,
-        description: tx.description,
-        counterpartyName: tx.counterpartyName,
-        valueDate: new Date(tx.valueDate),
-        bookingDate: new Date(tx.bookingDate),
-        balance: tx.balance,
-        state: tx.state,
-        finandaTransactionId: `seed-tx-${tx.valueDate}-${tx.amount}`,
-      },
-    });
-  }
-  console.log("Created 10 bank transactions");
-
-  // ==================== EXPENSES ====================
-  const budgetLines = await prisma.budgetLine.findMany({
-    where: { budget: { organizationId: org.id } },
-  });
-  const salaryLine = budgetLines.find((l) => l.category === "משכורות");
-  const rentLine = budgetLines.find((l) => l.category === "שכירות");
-  const activitiesLine = budgetLines.find((l) => l.category === "פעילויות");
-  const adminLine = budgetLines.find((l) => l.category === "הנהלה וכלליות");
-
-  await Promise.all([
-    prisma.expense.create({
-      data: {
-        organizationId: org.id, amount: 25000, description: "משכורות ינואר 2026",
-        category: "SALARIES", vendor: "שירות משכורות", status: "PAID",
-        expenseDate: new Date("2026-02-10"), paidAt: new Date("2026-02-10"),
-        bankAccountId: bankAccount1.id, budgetLineId: salaryLine?.id,
-      },
-    }),
-    prisma.expense.create({
-      data: {
-        organizationId: org.id, amount: 8500, description: "שכירות משרד - פברואר",
-        category: "RENT", vendor: "נכסי ירושלים בע\"מ", status: "PAID",
-        expenseDate: new Date("2026-02-01"), paidAt: new Date("2026-02-01"),
-        bankAccountId: bankAccount1.id, budgetLineId: rentLine?.id,
-      },
-    }),
-    prisma.expense.create({
-      data: {
-        organizationId: org.id, amount: 3200, description: "רכישת ציוד משרדי",
-        category: "SUPPLIES", vendor: "אופיס דיפו", status: "PAID",
-        expenseDate: new Date("2026-02-15"), paidAt: new Date("2026-02-15"),
-        bankAccountId: bankAccount1.id,
-      },
-    }),
-    prisma.expense.create({
-      data: {
-        organizationId: org.id, amount: 2500, description: "ייעוץ משפטי חודשי",
-        category: "PROFESSIONAL_SERVICES", vendor: "משרד עו\"ד כהן", status: "APPROVED",
-        expenseDate: new Date("2026-02-19"),
-        budgetLineId: adminLine?.id,
-      },
-    }),
-    prisma.expense.create({
-      data: {
-        organizationId: org.id, amount: 12000, description: "אירוע חנוכה לילדים",
-        category: "ACTIVITIES", vendor: "הפקות שמחה", status: "PAID",
-        expenseDate: new Date("2025-12-20"), paidAt: new Date("2025-12-20"),
-        budgetLineId: activitiesLine?.id,
-      },
-    }),
-    prisma.expense.create({
-      data: {
-        organizationId: org.id, amount: 4500, description: "ביטוח שנתי",
-        category: "INSURANCE", vendor: "הראל ביטוח", status: "PAID",
-        expenseDate: new Date("2026-02-08"), paidAt: new Date("2026-02-08"),
-        bankAccountId: bankAccount2.id,
-      },
-    }),
-  ]);
-  console.log("Created 6 expenses");
-
-  // ==================== BANK TRANSFERS (new) ====================
-  await prisma.bankTransfer.create({
-    data: {
-      organizationId: org.id,
-      fromAccountId: bankAccount1.id,
-      toAccountId: bankAccount2.id,
-      amount: 10000,
-      description: "העברה פנימית - מילוי חשבון לאומי",
-      status: "COMPLETED",
-      transferDate: new Date("2026-02-12"),
-    },
-  });
-
-  await prisma.bankTransfer.create({
-    data: {
-      organizationId: org.id,
-      fromAccountId: bankAccount1.id,
-      toExternalAccount: "345678",
-      toExternalBankCode: "20",
-      toExternalName: "ספק ציוד רפואי בע\"מ",
-      amount: 18500,
-      description: "רכישת כסאות גלגלים",
-      reference: "PO-2026-042",
-      status: "COMPLETED",
-      transferDate: new Date("2026-02-14"),
-    },
-  });
-  console.log("Created 2 bank transfers");
+  // ==================== BANKING DATA ====================
+  // Bank accounts, transactions, expenses, and transfers are NOT seeded.
+  // Real data comes from bank scraper sync (/portal/bank-sync) and manual entry.
 
   // ==================== ADMIN EVENTS ====================
   await Promise.all([
