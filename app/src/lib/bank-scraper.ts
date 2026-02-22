@@ -225,6 +225,7 @@ export async function scrapeBank(
     showBrowser: false,
     executablePath,
     args: chromium.args,
+    timeout: 120000, // 2 minutes — Israeli bank sites can be slow
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
