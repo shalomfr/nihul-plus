@@ -154,11 +154,14 @@ enum BankConnectionStatus {
 }
 
 enum TransferStatus {
+  PENDING_APPROVAL
+  APPROVED
   PENDING
   PROCESSING
   COMPLETED
   FAILED
   CANCELLED
+  REJECTED
 }
 
 enum AdminEventType {
@@ -197,6 +200,7 @@ model User {
   organization    Organization?   @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   notifications   Notification[]
   auditLogs       AuditLog[]
+  requestedTransfers BankTransfer[]
 
   @@map("users")
 }
@@ -443,7 +447,11 @@ model BankTransfer {
   amount              Float
   reference           String?
   description         String?
-  status              TransferStatus @default(PENDING)
+  purpose             String?
+  supportingDocUrl    String?        @map("supporting_doc_url")
+  requestedById       String?        @map("requested_by_id")
+  requiredApprovals   Int            @default(2) @map("required_approvals")
+  status              TransferStatus @default(PENDING_APPROVAL)
   finandaPaymentId    String?        @map("finanda_payment_id")
   transferDate        DateTime       @map("transfer_date")
   createdAt           DateTime       @default(now()) @map("created_at")
@@ -452,8 +460,25 @@ model BankTransfer {
   organization        Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   fromAccount         BankAccount?   @relation("TransferFrom", fields: [fromAccountId], references: [id], onDelete: SetNull)
   toAccount           BankAccount?   @relation("TransferTo", fields: [toAccountId], references: [id], onDelete: SetNull)
+  requestedBy         User?          @relation(fields: [requestedById], references: [id], onDelete: SetNull)
+  approvals           TransferApproval[]
 
   @@map("bank_transfers")
+}
+
+model TransferApproval {
+  id            String       @id @default(cuid())
+  transferId    String       @map("transfer_id")
+  signatoryId   String       @map("signatory_id")
+  action        String       // APPROVED or REJECTED
+  notes         String?
+  signedAt      DateTime     @default(now()) @map("signed_at")
+
+  transfer      BankTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  signatory     BoardMember  @relation(fields: [signatoryId], references: [id])
+
+  @@unique([transferId, signatoryId])
+  @@map("transfer_approvals")
 }
 
 model Expense {
@@ -589,20 +614,22 @@ model DocumentSequence {
 // ==================== BOARD ====================
 
 model BoardMember {
-  id              String       @id @default(cuid())
-  organizationId  String       @map("organization_id")
-  name            String
-  role            String
-  email           String?
-  phone           String?
-  idNumber        String?      @map("id_number")
-  startDate       DateTime?    @map("start_date")
-  endDate         DateTime?    @map("end_date")
-  isActive        Boolean      @default(true) @map("is_active")
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
+  id                    String       @id @default(cuid())
+  organizationId        String       @map("organization_id")
+  name                  String
+  role                  String
+  email                 String?
+  phone                 String?
+  idNumber              String?      @map("id_number")
+  startDate             DateTime?    @map("start_date")
+  endDate               DateTime?    @map("end_date")
+  isActive              Boolean      @default(true) @map("is_active")
+  isAuthorizedSignatory Boolean      @default(false) @map("is_authorized_signatory")
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transferApprovals     TransferApproval[]
 
   @@map("board_members")
 }

@@ -9,8 +9,15 @@ export const GET = withErrorHandler(async () => {
   const transfers = await prisma.bankTransfer.findMany({
     where: { organizationId: orgId },
     include: {
-      fromAccount: { select: { bankName: true, accountNumber: true } },
-      toAccount: { select: { bankName: true, accountNumber: true } },
+      fromAccount: { select: { bankName: true, accountNumber: true, branchNumber: true } },
+      toAccount: { select: { bankName: true, accountNumber: true, branchNumber: true } },
+      requestedBy: { select: { name: true } },
+      approvals: {
+        include: {
+          signatory: { select: { id: true, name: true, role: true } },
+        },
+        orderBy: { signedAt: "asc" },
+      },
     },
     orderBy: { transferDate: "desc" },
   });
@@ -32,9 +39,18 @@ export const POST = withErrorHandler(async (req: Request) => {
       toExternalBankCode: data.toExternalBankCode,
       toExternalName: data.toExternalName,
       amount: data.amount,
+      purpose: data.purpose,
       description: data.description,
       reference: data.reference,
+      supportingDocUrl: data.supportingDocUrl,
       transferDate: new Date(data.transferDate),
+      requestedById: user.id,
+      status: "PENDING_APPROVAL",
+    },
+    include: {
+      fromAccount: { select: { bankName: true, accountNumber: true } },
+      toAccount: { select: { bankName: true, accountNumber: true } },
+      approvals: true,
     },
   });
 

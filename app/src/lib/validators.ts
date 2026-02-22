@@ -200,9 +200,17 @@ export const createBankTransferSchema = z.object({
   toExternalBankCode: z.string().optional(),
   toExternalName: z.string().optional(),
   amount: z.number().positive("סכום חייב להיות חיובי"),
+  purpose: z.string().min(1, "מטרת ההעברה נדרשת"),
   description: z.string().optional(),
   reference: z.string().optional(),
+  supportingDocUrl: z.string().optional(),
   transferDate: z.string().datetime(),
+});
+
+export const approveTransferSchema = z.object({
+  signatoryId: z.string().min(1, "יש לבחור מורשה חתימה"),
+  action: z.enum(["APPROVED", "REJECTED"]),
+  notes: z.string().optional(),
 });
 
 // ==================== ADMIN EVENTS ====================
