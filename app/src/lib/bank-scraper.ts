@@ -1,4 +1,5 @@
 import { createScraper, CompanyTypes } from "israeli-bank-scrapers";
+import chromium from "@sparticuz/chromium";
 import { prisma } from "@/lib/prisma";
 import { encrypt, decrypt } from "@/lib/encryption";
 
@@ -214,11 +215,16 @@ export async function scrapeBank(
 ): Promise<ScrapeResult> {
   const companyType = getCompanyType(companyId);
 
+  // Use @sparticuz/chromium for cloud environments (Render, Lambda, etc.)
+  const executablePath = await chromium.executablePath();
+
   const scraper = createScraper({
     companyId: companyType as CompanyTypes,
     startDate,
     combineInstallments: false,
     showBrowser: false,
+    executablePath,
+    args: chromium.args,
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
