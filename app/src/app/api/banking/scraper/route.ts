@@ -3,39 +3,31 @@ import { requireManager, apiResponse, apiError, withErrorHandler } from "@/lib/a
 import { connectBankScraperSchema } from "@/lib/validators";
 import { encrypt } from "@/lib/encryption";
 import { getBankByCompanyId, syncBankData, SUPPORTED_BANKS } from "@/lib/bank-scraper";
-import { NextResponse } from "next/server";
 
-export const GET = async () => {
-  try {
-    const user = await requireManager();
+export const GET = withErrorHandler(async () => {
+  const user = await requireManager();
 
-    const connections = await prisma.bankScraperConnection.findMany({
-      where: { organizationId: user.organizationId! },
-      select: {
-        id: true,
-        companyId: true,
-        bankName: true,
-        status: true,
-        lastSyncAt: true,
-        lastError: true,
-        accountsFound: true,
-        txnsSynced: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+  const connections = await prisma.bankScraperConnection.findMany({
+    where: { organizationId: user.organizationId! },
+    select: {
+      id: true,
+      companyId: true,
+      bankName: true,
+      status: true,
+      lastSyncAt: true,
+      lastError: true,
+      accountsFound: true,
+      txnsSynced: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-    return apiResponse({
-      connections,
-      supportedBanks: SUPPORTED_BANKS,
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    const stack = err instanceof Error ? err.stack : undefined;
-    console.error("Scraper GET error:", err);
-    return NextResponse.json({ success: false, error: message, stack }, { status: 500 });
-  }
-};
+  return apiResponse({
+    connections,
+    supportedBanks: SUPPORTED_BANKS,
+  });
+});
 
 export const POST = withErrorHandler(async (req: Request) => {
   const user = await requireManager();
