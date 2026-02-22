@@ -4,12 +4,11 @@ import StatCard from "@/components/StatCard";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  CheckCircle2, AlertTriangle, AlertCircle, FileCheck,
-  Calendar, FileText, BarChart2, MessageCircle,
-  X, Clock, Download, Shield, Sparkles, ArrowLeft,
+  CheckCircle2, AlertTriangle, AlertCircle,
+  Calendar, FileText, MessageCircle,
+  X, Shield, ArrowLeft,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/Toast";
 
 /* ── types ── */
 type ComplianceItem = {
@@ -30,20 +29,12 @@ type BoardMeeting = {
   status: string;
 };
 
-type BoardMember = {
-  id: string;
-  name: string;
-  role: string;
-  isActive: boolean;
-};
-
-type BudgetInfo = {
-  id: string;
-  year: number;
-  name: string;
-  totalBudget: number;
-  totalSpent: number;
-  percentage: number;
+type CategoryScore = {
+  category: string;
+  label: string;
+  ok: number;
+  total: number;
+  score: number;
 };
 
 type NotificationItem = {
@@ -53,14 +44,6 @@ type NotificationItem = {
   message: string;
   isRead: boolean;
   createdAt: string;
-};
-
-type CategoryScore = {
-  category: string;
-  label: string;
-  ok: number;
-  total: number;
-  score: number;
 };
 
 type PortalData = {
@@ -79,10 +62,10 @@ type PortalData = {
     totalDonationsThisYear: number;
     donationCount: number;
     totalDonors: number;
-    budgets: BudgetInfo[];
+    budgets: unknown[];
   };
   board: {
-    members: BoardMember[];
+    members: unknown[];
     upcomingMeetings: BoardMeeting[];
   };
   volunteers: { activeCount: number };
@@ -92,8 +75,19 @@ type PortalData = {
 
 type Status = "green" | "orange" | "red";
 
+const CATEGORY_LABELS: Record<string, string> = {
+  FOUNDING_DOCS: "מסמכי יסוד",
+  ANNUAL_OBLIGATIONS: "חובות שנתיות לרשם",
+  TAX_APPROVALS: "אישורים מרשות המסים",
+  FINANCIAL_MGMT: "ניהול כספי שוטף",
+  DISTRIBUTION_DOCS: "תיעוד חלוקת כספים",
+  GOVERNANCE: "ממשל ופרוטוקולים",
+  EMPLOYEES_VOLUNTEERS: "עובדים ומתנדבים",
+  INSURANCE: "ביטוח",
+  GEMACH: 'גמ"ח כספים',
+};
+
 export default function PortalHomePage() {
-  const { showSuccess } = useToast();
   const router = useRouter();
   const [notifVisible, setNotifVisible] = useState(true);
   const [data, setData] = useState<PortalData | null>(null);
@@ -107,7 +101,6 @@ export default function PortalHomePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  /* dismiss notification and mark as read */
   const handleDismissNotification = async (notifId: string) => {
     setNotifVisible(false);
     try {
@@ -141,7 +134,7 @@ export default function PortalHomePage() {
     : status === "orange" ? `יש ${warningCount} פריטים שדורשים תשומת לב`
     : "נדרש טיפול דחוף";
 
-  // Derive urgent tasks from compliance items that are WARNING/EXPIRED/MISSING
+  // Urgent tasks — compliance items not OK, sorted by severity
   const urgentTasks = (data?.compliance?.items ?? [])
     .filter(item => item.status !== "OK")
     .map(item => {
@@ -150,79 +143,39 @@ export default function PortalHomePage() {
         : null;
       const dateStr = item.dueDate ? new Date(item.dueDate).toLocaleDateString("he-IL") : "";
       return {
+        id: item.id,
         title: item.name,
-        desc: item.description ?? "",
         days: daysUntil,
         date: dateStr,
-        level: item.status === "EXPIRED" || item.status === "MISSING" ? "urgent" : "soon",
+        level: item.status === "EXPIRED" || item.status === "MISSING" ? "urgent" as const : "soon" as const,
       };
-    });
+    })
+    .sort((a, b) => (a.level === "urgent" ? 0 : 1) - (b.level === "urgent" ? 0 : 1));
 
-  // Derive calendar events from upcoming meetings
+  // Upcoming events — meetings + compliance deadlines
   const calendarEvents = (data?.board?.upcomingMeetings ?? []).map(m => {
     const meetDate = new Date(m.date);
     const daysUntil = Math.max(0, Math.ceil((meetDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-    return {
-      title: m.title,
-      date: meetDate.toLocaleDateString("he-IL"),
-      days: daysUntil,
-      color: "#2563eb",
-    };
+    return { title: m.title, date: meetDate.toLocaleDateString("he-IL"), days: daysUntil, color: "#2563eb" };
   });
 
-  // Add compliance items with due dates as calendar events
-  const complianceCalendarEvents = (data?.compliance?.items ?? [])
+  const complianceDeadlines = (data?.compliance?.items ?? [])
     .filter(item => item.dueDate && item.status !== "OK")
     .map(item => {
       const dueDate = new Date(item.dueDate!);
       const daysUntil = Math.max(0, Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-      return {
-        title: item.name,
-        date: dueDate.toLocaleDateString("he-IL"),
-        days: daysUntil,
-        color: item.status === "EXPIRED" ? "#ef4444" : "#d97706",
-      };
+      return { title: item.name, date: dueDate.toLocaleDateString("he-IL"), days: daysUntil, color: item.status === "EXPIRED" ? "#ef4444" : "#d97706" };
     });
 
-  const allCalendarEvents = [...calendarEvents, ...complianceCalendarEvents]
+  const allUpcoming = [...calendarEvents, ...complianceDeadlines]
     .sort((a, b) => a.days - b.days)
     .slice(0, 3);
 
-  // Next meeting days
-  const nextMeetingDays = calendarEvents.length > 0 ? `${calendarEvents[0].days} ימים` : "—";
+  // Category scores — all categories, worst first
+  const categoryScores = (data?.compliance?.categoryScores ?? []).filter(cs => cs.total > 0);
 
   // Notifications
-  const notifications = data?.notifications ?? [];
-  const firstUnread = notifications.find(n => !n.isRead);
-
-  // Progress bars — show worst-scoring compliance categories (top 4 needing attention)
-  const categoryScores = data?.compliance?.categoryScores ?? [];
-  const categoryProgressBars = categoryScores
-    .filter(cs => cs.total > 0)
-    .slice(0, 4)
-    .map(cs => ({
-      label: cs.label,
-      pct: cs.score,
-      color: cs.score === 100 ? "#059669" : cs.score >= 60 ? "#d97706" : "#ef4444",
-    }));
-
-  const budgetProgressBars = (data?.financial?.budgets ?? []).slice(0, 4).map(b => ({
-    label: b.name,
-    pct: b.percentage,
-    color: b.percentage >= 90 ? "#059669" : b.percentage >= 70 ? "#2563eb" : "#d97706",
-  }));
-
-  const fallbackProgressBars = categoryProgressBars.length > 0 ? categoryProgressBars : budgetProgressBars.length > 0 ? budgetProgressBars : [
-    { label: "ציון ציות", pct: score, color: score >= 80 ? "#059669" : score >= 60 ? "#2563eb" : "#d97706" },
-  ];
-
-  /* Quick actions config — real navigation links */
-  const quickActions = [
-    { icon: FileText, label: "צור פרוטוקול", bg: "#eff6ff", color: "#2563eb", href: "/portal/board" },
-    { icon: BarChart2, label: "הפק דוח", bg: "#f0fdf4", color: "#16a34a", href: "/portal/reports" },
-    { icon: FileCheck, label: "העלה מסמך", bg: "#eff6ff", color: "#2563eb", href: "/portal/documents" },
-    { icon: AlertCircle, label: "דווח על בעיה", bg: "#fef2f2", color: "#ef4444", href: "/portal/contact" },
-  ];
+  const firstUnread = (data?.notifications ?? []).find(n => !n.isRead);
 
   return (
     <div className="px-4 md:px-8 pb-6 md:pb-8">
@@ -245,17 +198,27 @@ export default function PortalHomePage() {
         </div>
       )}
 
-      {/* ─── STAT CARDS ─── */}
-      <div data-tour="portal-stats" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="anim-fade-scale delay-1"><StatCard icon={Shield} label="ציון ניהול תקין" value={String(score)} color="#2563eb" /></div>
-        <div className="anim-fade-scale delay-2"><StatCard icon={AlertTriangle} label="משימות פתוחות" value={String(urgentTasks.length)} color="#d97706" /></div>
-        <div className="anim-fade-scale delay-3"><StatCard icon={Calendar} label="ישיבה הבאה" value={nextMeetingDays} color="#2563eb" /></div>
-        <div className="anim-fade-scale delay-4"><StatCard icon={FileText} label="מסמכים" value={String(data?.documents?.count ?? 0)} color="#16a34a" /></div>
+      {/* ─── 2 STAT CARDS ─── */}
+      <div data-tour="portal-stats" className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="anim-fade-scale delay-1">
+          <StatCard icon={Shield} label="ציון ניהול תקין" value={String(score)} color="#2563eb" />
+        </div>
+        <div className="anim-fade-scale delay-2">
+          <StatCard
+            icon={AlertTriangle}
+            label="פריטים לטיפול"
+            value={String(warningCount)}
+            color={warningCount === 0 ? "#16a34a" : "#d97706"}
+            change={warningCount === 0 ? "הכל תקין" : undefined}
+            trend={warningCount === 0 ? "down" : undefined}
+          />
+        </div>
       </div>
 
-      {/* ─── STATUS CARD WITH PROGRESS BARS ─── */}
+      {/* ─── MAIN STATUS + COMPLIANCE CATEGORIES ─── */}
       <div data-tour="portal-status" className="anim-fade-up delay-2 bg-white rounded-2xl p-6 mb-6 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
-        <div className="flex items-start justify-between gap-6 mb-5">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-6 mb-6">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
               status === "green" ? "bg-[#f0fdf4]" : status === "orange" ? "bg-[#fffbeb]" : "bg-[#fef2f2]"
@@ -277,91 +240,87 @@ export default function PortalHomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-          {fallbackProgressBars.map((bar, i) => (
-            <div key={bar.label} className={`anim-fade-up delay-${i + 3}`}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[12px] font-medium text-[#1e293b]">{bar.label}</span>
-                <span className="text-[12px] font-bold" style={{ color: bar.color }}>{bar.pct}%</span>
+        {/* Category list */}
+        <div className="space-y-3">
+          {categoryScores.map((cs, i) => {
+            const color = cs.score === 100 ? "#16a34a" : cs.score >= 60 ? "#d97706" : "#ef4444";
+            const bgColor = cs.score === 100 ? "bg-[#f0fdf4]" : cs.score >= 60 ? "bg-[#fffbeb]" : "bg-[#fef2f2]";
+            const Icon = cs.score === 100 ? CheckCircle2 : cs.score >= 60 ? AlertTriangle : AlertCircle;
+            return (
+              <div key={cs.category} className={`anim-fade-right delay-${(i % 8) + 1} flex items-center gap-3`}>
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${bgColor}`}>
+                  <Icon size={14} style={{ color }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[13px] font-medium text-[#1e293b] truncate">
+                      {CATEGORY_LABELS[cs.category] ?? cs.label}
+                    </span>
+                    <span className="text-[12px] font-bold flex-shrink-0 mr-2" style={{ color }}>
+                      {cs.ok}/{cs.total}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-[#e2e8f0] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full anim-progress"
+                      style={{
+                        width: `${cs.score}%`,
+                        background: color,
+                        animationDelay: `${0.3 + i * 0.1}s`,
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="h-2 bg-[#e2e8f0] rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full anim-progress"
-                  style={{
-                    width: `${bar.pct}%`,
-                    background: bar.color,
-                    animationDelay: `${0.3 + i * 0.15}s`,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
+
+          {categoryScores.length === 0 && (
+            <div className="text-center py-4 text-[13px] text-[#64748b]">אין נתוני קטגוריות</div>
+          )}
         </div>
 
-        <Link href="/portal/status" className="inline-flex items-center gap-1 mt-4 text-[12px] font-semibold text-[#2563eb] hover:underline">
+        <Link href="/portal/status" className="inline-flex items-center gap-1 mt-5 text-[12px] font-semibold text-[#2563eb] hover:underline">
           פרטים מלאים <ArrowLeft size={12} />
         </Link>
       </div>
 
-      {/* ─── APPROVALS + URGENT TASKS ─── */}
-      <div data-tour="portal-urgent" className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-        {/* Approvals (from notifications) */}
-        <div className="anim-fade-up delay-3 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
-          <h3 className="text-[15px] font-bold text-[#1e293b] mb-4 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
-              <Clock size={16} className="text-[#2563eb]" />
-            </div>
-            התראות אחרונות ({notifications.filter(n => !n.isRead).length})
-          </h3>
-          <div className="space-y-2">
-            {notifications.length === 0 ? (
-              <div className="text-center py-6 text-[13px] text-[#64748b]">אין התראות</div>
-            ) : (
-              notifications.slice(0, 3).map((item, i) => (
-                <div key={item.id} className={`anim-fade-right delay-${i + 2} flex items-center justify-between p-3.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4]/50 hover:border-[#2563eb]/20 transition-all`}>
-                  <div>
-                    <div className="text-[13px] font-medium text-[#1e293b]">{item.title}</div>
-                    <div className="text-[11px] text-[#64748b]">{new Date(item.createdAt).toLocaleDateString("he-IL")}</div>
-                  </div>
-                  {!item.isRead && (
-                    <span className="text-[11px] font-semibold text-[#2563eb] bg-[#eff6ff] px-3 py-1.5 rounded-lg">
-                      חדש
-                    </span>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Urgent Tasks */}
+      {/* ─── TWO COLUMNS: URGENT + ACTIONS/UPCOMING ─── */}
+      <div data-tour="portal-urgent" className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        {/* Left: What needs attention */}
         <div className="anim-fade-up delay-4 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
           <h3 className="text-[15px] font-bold text-[#1e293b] mb-4 flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-[#fffbeb] flex items-center justify-center">
               <AlertTriangle size={16} className="text-[#d97706]" />
             </div>
-            משימות דחופות ({urgentTasks.length})
+            מה דורש טיפול ({urgentTasks.length})
           </h3>
           <div className="space-y-2">
             {urgentTasks.length === 0 ? (
-              <div className="text-center py-6 text-[13px] text-[#64748b]">אין משימות דחופות</div>
+              <div className="text-center py-6">
+                <CheckCircle2 size={32} className="text-[#16a34a] mx-auto mb-2" />
+                <div className="text-[14px] font-semibold text-[#16a34a]">הכל תקין!</div>
+                <div className="text-[12px] text-[#64748b]">אין פריטים שדורשים טיפול</div>
+              </div>
             ) : (
-              urgentTasks.map((task, i) => (
-                <div key={i} className={`anim-fade-right delay-${i + 1} flex items-center justify-between p-3.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4]/50 hover:border-[#2563eb]/20 transition-all ${
+              urgentTasks.slice(0, 5).map((task, i) => (
+                <div key={task.id} className={`anim-fade-right delay-${(i % 4) + 1} flex items-center justify-between p-3.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4]/50 hover:border-[#2563eb]/20 transition-all ${
                   task.level === "urgent" ? "border-r-[3px] border-r-[#ef4444]" : "border-r-[3px] border-r-[#d97706]"
                 }`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${task.level === "urgent" ? "bg-[#fef2f2]" : "bg-[#fffbeb]"}`}>
-                      {task.level === "urgent" ? <Shield size={14} className="text-[#ef4444]" /> : <FileText size={14} className="text-[#d97706]" />}
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${task.level === "urgent" ? "bg-[#fef2f2]" : "bg-[#fffbeb]"}`}>
+                      {task.level === "urgent" ? <AlertCircle size={14} className="text-[#ef4444]" /> : <AlertTriangle size={14} className="text-[#d97706]" />}
                     </div>
                     <div>
                       <div className="text-[13px] font-medium text-[#1e293b]">{task.title}</div>
-                      <div className="text-[11px] text-[#64748b]">{task.days !== null ? `${task.days} ימים` : ""}{task.date ? ` · ${task.date}` : ""}</div>
+                      <div className="text-[11px] text-[#64748b]">
+                        {task.days !== null ? `${task.days} ימים` : ""}{task.date ? ` · ${task.date}` : ""}
+                      </div>
                     </div>
                   </div>
                   <button
                     onClick={() => router.push("/portal/status")}
-                    className="text-[11px] font-semibold text-[#2563eb] hover:text-[#1d4ed8] px-3 py-1.5 rounded-lg hover:bg-[#eff6ff] transition-all"
+                    className="text-[11px] font-semibold text-[#2563eb] hover:text-[#1d4ed8] px-3 py-1.5 rounded-lg hover:bg-[#eff6ff] transition-all flex-shrink-0"
                   >
                     טפל →
                   </button>
@@ -370,187 +329,82 @@ export default function PortalHomePage() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* ─── TWO-COLUMN: CALENDAR + DOCS ─── */}
-      <div data-tour="portal-calendar" className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-        {/* Calendar */}
-        <div className="anim-fade-up delay-5 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[15px] font-bold text-[#1e293b] flex items-center gap-2">
+        {/* Right: Quick Actions + Upcoming */}
+        <div className="space-y-4 md:space-y-6">
+          {/* Quick Actions */}
+          <div className="anim-fade-up delay-5 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+            <h3 className="text-[15px] font-bold text-[#1e293b] mb-4 flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
-                <Calendar size={16} className="text-[#2563eb]" />
+                <Shield size={16} className="text-[#2563eb]" />
               </div>
-              מה בקרוב
+              פעולות מהירות
             </h3>
-            <Link href="/portal/calendar" className="text-[12px] font-semibold text-[#2563eb] hover:underline flex items-center gap-1">
-              הכל <ArrowLeft size={12} />
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {allCalendarEvents.length === 0 ? (
-              <div className="text-center py-6 text-[13px] text-[#64748b]">אין אירועים קרובים</div>
-            ) : (
-              allCalendarEvents.map((ev, i) => (
-                <div key={i} className={`anim-fade-right delay-${i + 2} flex items-center justify-between p-3.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4]/50 hover:border-[#2563eb]/20 transition-all`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-10 rounded-full" style={{ background: ev.color }} />
-                    <div>
-                      <div className="text-[13px] font-medium text-[#1e293b]">{ev.title}</div>
-                      <div className="text-[11px] text-[#64748b]">{ev.date}</div>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-semibold text-[#2563eb] bg-[#eff6ff] px-3 py-1.5 rounded-lg">
-                    {ev.days} ימים
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Recent Documents (count info) */}
-        <div className="anim-fade-up delay-6 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[15px] font-bold text-[#1e293b] flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
-                <FileText size={16} className="text-[#2563eb]" />
-              </div>
-              סיכום כספי
-            </h3>
-            <Link href="/portal/reports" className="text-[12px] font-semibold text-[#2563eb] hover:underline flex items-center gap-1">
-              הכל <ArrowLeft size={12} />
-            </Link>
-          </div>
-          <div className="space-y-2">
-            <div className="anim-fade-right delay-2 flex items-center justify-between p-3.5 rounded-xl hover:bg-[#f8f9fc] transition-all border border-transparent hover:border-[#e8ecf4]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#eff6ff] flex items-center justify-center text-[10px] font-bold text-[#2563eb]">
-                  ₪
-                </div>
-                <div>
-                  <div className="text-[13px] font-medium text-[#1e293b]">תרומות השנה</div>
-                  <div className="text-[11px] text-[#64748b]">{data?.financial?.donationCount ?? 0} תרומות</div>
-                </div>
-              </div>
-              <span className="text-[14px] font-bold text-[#2563eb]">₪{(data?.financial?.totalDonationsThisYear ?? 0).toLocaleString()}</span>
-            </div>
-            <div className="anim-fade-right delay-3 flex items-center justify-between p-3.5 rounded-xl hover:bg-[#f8f9fc] transition-all border border-transparent hover:border-[#e8ecf4]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#f0fdf4] flex items-center justify-center text-[14px]">
-                  👥
-                </div>
-                <div>
-                  <div className="text-[13px] font-medium text-[#1e293b]">תורמים</div>
-                  <div className="text-[11px] text-[#64748b]">סה״כ תורמים רשומים</div>
-                </div>
-              </div>
-              <span className="text-[14px] font-bold text-[#16a34a]">{data?.financial?.totalDonors ?? 0}</span>
-            </div>
-            <div className="anim-fade-right delay-4 flex items-center justify-between p-3.5 rounded-xl hover:bg-[#f8f9fc] transition-all border border-transparent hover:border-[#e8ecf4]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#eff6ff] flex items-center justify-center text-[14px]">
-                  📄
-                </div>
-                <div>
-                  <div className="text-[13px] font-medium text-[#1e293b]">מסמכים</div>
-                  <div className="text-[11px] text-[#64748b]">מסמכים שמורים במערכת</div>
-                </div>
-              </div>
-              <span className="text-[14px] font-bold text-[#2563eb]">{data?.documents?.count ?? 0}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── QUICK ACTIONS + COMPLETED ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-        {/* Quick Actions */}
-        <div className="anim-fade-up delay-5 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
-          <h3 className="text-[15px] font-bold text-[#1e293b] mb-4 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
-              <Sparkles size={16} className="text-[#2563eb]" />
-            </div>
-            פעולות מהירות
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            {quickActions.map((qa, i) => (
+            <div className="grid grid-cols-3 gap-3">
               <Link
-                key={qa.label}
-                href={qa.href}
-                className={`anim-fade-scale delay-${i + 2} flex items-center gap-3 p-3.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4]/50 hover:border-[#2563eb]/20 transition-all text-right`}
+                href="/portal/status"
+                className="anim-fade-scale delay-2 flex flex-col items-center gap-2 p-3.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4]/50 hover:border-[#2563eb]/20 transition-all text-center"
               >
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: qa.bg }}>
-                  <qa.icon size={14} style={{ color: qa.color }} />
+                <div className="w-9 h-9 rounded-lg bg-[#eff6ff] flex items-center justify-center">
+                  <CheckCircle2 size={16} className="text-[#2563eb]" />
                 </div>
-                <span className="text-[13px] font-medium text-[#1e293b]">{qa.label}</span>
+                <span className="text-[12px] font-medium text-[#1e293b]">צפה בפרטים</span>
               </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Completed (ok compliance items) */}
-        <div className="anim-fade-up delay-6 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
-          <h3 className="text-[15px] font-bold text-[#1e293b] mb-4 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#f0fdf4] flex items-center justify-center">
-              <CheckCircle2 size={16} className="text-[#16a34a]" />
+              <Link
+                href="/portal/documents"
+                className="anim-fade-scale delay-3 flex flex-col items-center gap-2 p-3.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4]/50 hover:border-[#2563eb]/20 transition-all text-center"
+              >
+                <div className="w-9 h-9 rounded-lg bg-[#f0fdf4] flex items-center justify-center">
+                  <FileText size={16} className="text-[#16a34a]" />
+                </div>
+                <span className="text-[12px] font-medium text-[#1e293b]">העלה מסמך</span>
+              </Link>
+              <Link
+                href="/portal/contact"
+                className="anim-fade-scale delay-4 flex flex-col items-center gap-2 p-3.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4]/50 hover:border-[#2563eb]/20 transition-all text-center"
+              >
+                <div className="w-9 h-9 rounded-lg bg-[#eff6ff] flex items-center justify-center">
+                  <MessageCircle size={16} className="text-[#2563eb]" />
+                </div>
+                <span className="text-[12px] font-medium text-[#1e293b]">פנה למלווה</span>
+              </Link>
             </div>
-            מה הושלם לאחרונה
-          </h3>
-          <div className="space-y-2">
-            {(data?.compliance?.items ?? []).filter(item => item.status === "OK").length === 0 ? (
-              <div className="text-center py-6 text-[13px] text-[#64748b]">אין נתונים</div>
-            ) : (
-              (data?.compliance?.items ?? [])
-                .filter(item => item.status === "OK")
-                .slice(0, 3)
-                .map((item, i) => (
-                  <div key={item.id} className={`anim-fade-right delay-${i + 1} p-3.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4]/50`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <CheckCircle2 size={14} className="text-[#16a34a]" />
-                      <span className="text-[13px] font-semibold text-[#1e293b]">{item.name}</span>
+          </div>
+
+          {/* Upcoming */}
+          <div className="anim-fade-up delay-6 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[15px] font-bold text-[#1e293b] flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
+                  <Calendar size={16} className="text-[#2563eb]" />
+                </div>
+                מה בקרוב
+              </h3>
+              <Link href="/portal/calendar" className="text-[12px] font-semibold text-[#2563eb] hover:underline flex items-center gap-1">
+                הכל <ArrowLeft size={12} />
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {allUpcoming.length === 0 ? (
+                <div className="text-center py-4 text-[13px] text-[#64748b]">אין אירועים קרובים</div>
+              ) : (
+                allUpcoming.map((ev, i) => (
+                  <div key={i} className={`anim-fade-right delay-${i + 2} flex items-center justify-between p-3 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4]/50 hover:border-[#2563eb]/20 transition-all`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-1.5 h-8 rounded-full" style={{ background: ev.color }} />
+                      <div>
+                        <div className="text-[13px] font-medium text-[#1e293b]">{ev.title}</div>
+                        <div className="text-[11px] text-[#64748b]">{ev.date}</div>
+                      </div>
                     </div>
-                    <div className="text-[11px] text-[#64748b] mb-1.5">{item.description ?? "הושלם"}</div>
-                    <span className="text-[11px] font-semibold text-[#16a34a] bg-[#f0fdf4] px-3 py-1 rounded-lg border border-[#bbf7d0]">
-                      תקין
+                    <span className="text-[11px] font-semibold text-[#2563eb] bg-[#eff6ff] px-2.5 py-1 rounded-lg">
+                      {ev.days} ימים
                     </span>
                   </div>
                 ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ─── HELP BANNER ─── */}
-      <div className="anim-fade-up delay-7 bg-white rounded-2xl p-5 border border-[#e8ecf4] flex items-center justify-between hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
-            <MessageCircle size={16} className="text-[#2563eb]" />
-          </div>
-          <div>
-            <h3 className="text-[15px] font-bold text-[#1e293b]">צריך עזרה? דבר איתנו</h3>
-            <p className="text-[12px] text-[#64748b]">המלווה שלך כאן בשבילך – WhatsApp, אימייל או טופס</p>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <div className="relative group">
-            <a
-              href="#"
-              onClick={e => e.preventDefault()}
-              className="text-[12px] font-semibold text-[#16a34a] hover:text-[#15803d] px-4 py-2 rounded-xl bg-[#f0fdf4] border border-[#bbf7d0] hover:bg-[#dcfce7] transition-all"
-            >
-              WhatsApp
-            </a>
-            <div className="absolute bottom-full mb-2 right-0 bg-[#1e293b] text-white text-[11px] px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              מספר הטלפון יוגדר בהגדרות
+              )}
             </div>
           </div>
-          <Link
-            href="/portal/contact"
-            className="text-[12px] font-semibold text-[#2563eb] hover:text-[#1d4ed8] px-4 py-2 rounded-xl bg-[#eff6ff] border border-[#bfdbfe] hover:bg-[#dbeafe] transition-all"
-          >
-            פנה למלווה
-          </Link>
         </div>
       </div>
     </div>
