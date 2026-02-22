@@ -1,5 +1,3 @@
-import { createScraper, CompanyTypes } from "israeli-bank-scrapers";
-import chromium from "@sparticuz/chromium";
 import { prisma } from "@/lib/prisma";
 import { encrypt, decrypt } from "@/lib/encryption";
 
@@ -171,12 +169,7 @@ export const SUPPORTED_BANKS: SupportedBank[] = [
 
 /* ── Helpers ── */
 
-const COMPANY_TYPE_MAP: Record<string, string> = Object.fromEntries(
-  Object.entries(CompanyTypes).map(([key, value]) => [key.toLowerCase(), value])
-);
-
 function getCompanyType(companyId: string): string {
-  // CompanyTypes values match the companyId strings directly
   const bank = SUPPORTED_BANKS.find(b => b.companyId === companyId);
   if (!bank) throw new Error(`Unsupported bank: ${companyId}`);
   return companyId;
@@ -215,11 +208,17 @@ export async function scrapeBank(
 ): Promise<ScrapeResult> {
   const companyType = getCompanyType(companyId);
 
-  // Use @sparticuz/chromium for cloud environments (Render, Lambda, etc.)
+  // Lazy-import heavy dependencies so the module doesn't crash on import
+  // when puppeteer/chromium binaries aren't available (e.g. local dev, GET endpoints)
+  const [{ createScraper, CompanyTypes }, chromiumModule] = await Promise.all([
+    import("israeli-bank-scrapers"),
+    import("@sparticuz/chromium"),
+  ]);
+  const chromium = chromiumModule.default;
   const executablePath = await chromium.executablePath();
 
   const scraper = createScraper({
-    companyId: companyType as CompanyTypes,
+    companyId: companyType as (typeof CompanyTypes)[keyof typeof CompanyTypes],
     startDate,
     combineInstallments: false,
     showBrowser: false,
