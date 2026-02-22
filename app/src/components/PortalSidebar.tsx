@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Home, CheckCircle, Calendar, FileText, BarChart2, MessageCircle, Users, LogOut, Menu, X, Compass, Landmark } from "lucide-react";
+import { Home, CheckCircle, Calendar, FileText, BarChart2, MessageCircle, Users, LogOut, Menu, X, Compass, Landmark, RefreshCw } from "lucide-react";
 import { useTour } from "@/components/tour/TourContext";
 
 const roleLabels: Record<string, string> = {
@@ -19,6 +19,7 @@ const navItems = [
   { href: "/portal/documents", icon: FileText, label: "המסמכים שלי" },
   { href: "/portal/board", icon: Users, label: "הועד שלי" },
   { href: "/portal/banking", icon: Landmark, label: "בנק והוצאות" },
+  { href: "/portal/bank-sync", icon: RefreshCw, label: "סנכרון בנק" },
   { href: "/portal/reports", icon: BarChart2, label: "דוחות ותקציב" },
   { href: "/portal/contact", icon: MessageCircle, label: "פנה למלווה" },
 ];

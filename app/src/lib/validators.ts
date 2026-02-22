@@ -169,6 +169,12 @@ export const updateBankAccountSchema = createBankAccountSchema.partial().extend(
   isActive: z.boolean().optional(),
 });
 
+// ==================== BANK SCRAPER ====================
+export const connectBankScraperSchema = z.object({
+  companyId: z.string().min(1, "יש לבחור בנק"),
+  credentials: z.record(z.string(), z.string()),
+});
+
 // ==================== EXPENSES ====================
 export const createExpenseSchema = z.object({
   amount: z.number().positive("סכום חייב להיות חיובי"),

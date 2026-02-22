@@ -243,6 +243,7 @@ model Organization {
   bankAccounts        BankAccount[]
   expenses            Expense[]
   finandaConnections  FinandaConnection[]
+  scraperConnections  BankScraperConnection[]
   adminEvents         AdminEvent[]
 
   @@map("organizations")
@@ -499,6 +500,26 @@ model FinandaConnection {
 
   @@unique([organizationId, bankCode])
   @@map("finanda_connections")
+}
+
+model BankScraperConnection {
+  id                String               @id @default(cuid())
+  organizationId    String               @map("organization_id")
+  companyId         String               @map("company_id")
+  bankName          String               @map("bank_name")
+  encryptedCreds    String               @map("encrypted_creds")
+  status            BankConnectionStatus @default(PENDING_CONSENT)
+  lastSyncAt        DateTime?            @map("last_sync_at")
+  lastError         String?              @map("last_error")
+  accountsFound     Int                  @default(0) @map("accounts_found")
+  txnsSynced        Int                  @default(0) @map("txns_synced")
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, companyId])
+  @@map("bank_scraper_connections")
 }
 
 model Budget {
