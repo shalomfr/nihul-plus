@@ -48,8 +48,8 @@ function ScoreRing() {
 export default function Compliance() {
   return (
     <section id="compliance" className="py-24">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="glass-card-strong rounded-3xl p-8 md:p-14 flex flex-col lg:flex-row items-center gap-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="glass-card-strong rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-14 flex flex-col lg:flex-row items-center gap-8 sm:gap-12">
           {/* Left — Score + Icon */}
           <ScrollReveal direction="right" className="flex-shrink-0">
             <div className="text-center lg:text-right">
@@ -64,7 +64,7 @@ export default function Compliance() {
           {/* Right — Content */}
           <div className="flex-1">
             <ScrollReveal>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#1e293b] mb-3">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1e293b] mb-3">
                 ניהול תקין — בלי לפספס שום דבר
               </h2>
               <p className="text-[#64748b] mb-8 leading-relaxed">

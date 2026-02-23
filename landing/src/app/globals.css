@@ -92,14 +92,18 @@ body {
 .float-delay-2 { animation-delay: 1s; }
 .float-delay-3 { animation-delay: 1.5s; }
 
-/* ── 3D mockup ── */
-.mockup-3d {
-  transform: perspective(1200px) rotateY(-4deg) rotateX(2deg);
+/* ── 3D mockup — desktop only ── */
+.mockup-3d-desktop {
   transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.mockup-3d:hover {
-  transform: perspective(1200px) rotateY(0deg) rotateX(0deg);
+@media (min-width: 768px) {
+  .mockup-3d-desktop {
+    transform: perspective(1200px) rotateY(-4deg) rotateX(2deg);
+  }
+  .mockup-3d-desktop:hover {
+    transform: perspective(1200px) rotateY(0deg) rotateX(0deg);
+  }
 }
 
 /* ── Section divider ── */

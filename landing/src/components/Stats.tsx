@@ -39,9 +39,9 @@ function Counter({ value, suffix }: { value: number; suffix: string }) {
 export default function Stats() {
   return (
     <section className="py-10">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <motion.div
-          className="glass-card-strong rounded-2xl py-8 px-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center"
+          className="glass-card-strong rounded-2xl py-6 sm:py-8 px-4 sm:px-6 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-50px" }}
@@ -49,10 +49,10 @@ export default function Stats() {
         >
           {STATS.map((stat, i) => (
             <div key={i}>
-              <div className="text-3xl md:text-4xl font-extrabold text-[#2563eb]">
+              <div className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#2563eb]">
                 <Counter value={stat.value} suffix={stat.suffix} />
               </div>
-              <div className="text-sm text-[#64748b] mt-1 font-medium">{stat.label}</div>
+              <div className="text-xs sm:text-sm text-[#64748b] mt-1 font-medium">{stat.label}</div>
             </div>
           ))}
         </motion.div>
