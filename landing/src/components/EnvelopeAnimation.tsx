@@ -6,14 +6,14 @@ export default function EnvelopeAnimation() {
   return (
     <motion.div
       className="envelope-scene"
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="env">
         {/* paper with checkmark */}
         <div className="env-paper">
-          <svg width="60" height="60" viewBox="0 0 30 30" fill="none">
+          <svg width="36" height="36" viewBox="0 0 30 30" fill="none">
             <circle
               cx="15"
               cy="15"
@@ -46,7 +46,7 @@ export default function EnvelopeAnimation() {
         </div>
       </div>
 
-      {/* Glow ring behind envelope */}
+      {/* Glow */}
       <div className="env-glow" />
 
       <style>{`
@@ -54,26 +54,26 @@ export default function EnvelopeAnimation() {
           display: flex;
           justify-content: center;
           align-items: flex-end;
-          height: 260px;
+          height: 150px;
           position: relative;
         }
 
         .env {
           position: relative;
-          width: 220px;
-          height: 165px;
+          width: 130px;
+          height: 98px;
         }
 
         /* ── glow ── */
         .env-glow {
           position: absolute;
-          bottom: 10px;
+          bottom: 0;
           left: 50%;
           transform: translateX(-50%);
-          width: 280px;
-          height: 200px;
+          width: 180px;
+          height: 140px;
           border-radius: 50%;
-          background: radial-gradient(ellipse at center, rgba(37, 99, 235, 0.12) 0%, transparent 70%);
+          background: radial-gradient(ellipse at center, rgba(37, 99, 235, 0.1) 0%, transparent 70%);
           pointer-events: none;
           animation: glowPulse 5s ease-in-out infinite;
         }
@@ -83,66 +83,66 @@ export default function EnvelopeAnimation() {
           position: absolute;
           left: 0;
           right: 0;
-          top: 38px;
+          top: 22px;
           bottom: 0;
           background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 100%);
-          border-radius: 8px 8px 24px 24px;
-          box-shadow: 0 12px 48px rgba(37, 99, 235, 0.2), 0 4px 16px rgba(37, 99, 235, 0.1);
+          border-radius: 5px 5px 16px 16px;
+          box-shadow: 0 8px 32px rgba(37, 99, 235, 0.18), 0 2px 10px rgba(37, 99, 235, 0.08);
           z-index: 1;
         }
 
         /* ── front V fold ── */
         .env-front {
           position: absolute;
-          top: 38px;
+          top: 22px;
           left: 0;
-          width: 220px;
-          height: 127px;
+          width: 130px;
+          height: 76px;
           z-index: 3;
           clip-path: polygon(0 10%, 50% 78%, 100% 10%, 100% 100%, 0 100%);
           background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
-          border-radius: 0 0 24px 24px;
+          border-radius: 0 0 16px 16px;
         }
 
         /* ── paper ── */
         .env-paper {
           position: absolute;
           left: 50%;
-          width: 110px;
-          height: 90px;
-          margin-left: -55px;
-          bottom: 12px;
+          width: 66px;
+          height: 54px;
+          margin-left: -33px;
+          bottom: 8px;
           background: #ffffff;
-          border: 2px solid #e8ecf4;
-          border-radius: 12px;
+          border: 1.5px solid #e8ecf4;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 2;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
           animation: paperSlide 5s ease-in-out infinite, paperZ 5s step-end infinite;
         }
 
         /* ── flap wrapper ── */
         .env-flap-wrap {
           position: absolute;
-          top: 38px;
+          top: 22px;
           left: 0;
-          width: 220px;
+          width: 130px;
           height: 0;
           z-index: 4;
-          perspective: 800px;
+          perspective: 600px;
         }
 
         .env-flap {
           width: 0;
           height: 0;
-          border-left: 110px solid transparent;
-          border-right: 110px solid transparent;
-          border-top: 62px solid #bfdbfe;
+          border-left: 65px solid transparent;
+          border-right: 65px solid transparent;
+          border-top: 38px solid #bfdbfe;
           transform-origin: top center;
           animation: flapOpen 5s ease-in-out infinite;
-          filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.1));
+          filter: drop-shadow(0 1px 3px rgba(37, 99, 235, 0.08));
         }
 
         /* ── checkmark parts ── */
@@ -168,8 +168,8 @@ export default function EnvelopeAnimation() {
 
         @keyframes paperSlide {
           0%, 20%   { transform: translateY(0); }
-          38%       { transform: translateY(-105px); }
-          62%       { transform: translateY(-105px); }
+          38%       { transform: translateY(-62px); }
+          62%       { transform: translateY(-62px); }
           80%, 100% { transform: translateY(0); }
         }
 

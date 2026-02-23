@@ -16,10 +16,12 @@ export default function Hero() {
       <div className="absolute top-20 right-[10%] w-[400px] h-[400px] rounded-full bg-blue-400/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-20 left-[10%] w-[300px] h-[300px] rounded-full bg-violet-400/8 blur-[100px] pointer-events-none" />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
-        {/* Envelope Animation */}
+      {/* Envelope Animation — top right */}
+      <div className="absolute top-20 right-6 md:right-12 lg:right-[8%] z-20">
         <EnvelopeAnimation />
+      </div>
 
+      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
