@@ -11,7 +11,7 @@ export default function HowItWorks() {
             איך זה עובד?
           </h2>
           <p className="text-lg text-[#64748b]">
-            שלושה צעדים פשוטים לניהול תקין מושלם
+            שלושה צעדים פשוטים להתחיל לקבל ליווי מקצועי
           </p>
         </ScrollReveal>
 

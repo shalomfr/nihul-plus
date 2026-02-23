@@ -31,7 +31,7 @@ export default function Hero() {
         >
           <span className="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse" />
           <span className="text-xs font-medium text-[#64748b]">
-            למעלה מ-100 עמותות כבר משתמשות
+            למעלה מ-100 עמותות כבר מלוות על ידינו
           </span>
         </motion.div>
 
@@ -43,9 +43,9 @@ export default function Hero() {
           transition={{ duration: 0.7, delay: 0.45 }}
         >
           <span className="text-[#1e293b]">ניהול תקין.</span>{" "}
-          <span className="gradient-text">אוטומטי.</span>
+          <span className="gradient-text">ליווי מקצועי.</span>
           <br />
-          <span className="text-[#1e293b]">בלי כאב ראש.</span>
+          <span className="text-[#1e293b]">שקט נפשי.</span>
         </motion.h1>
 
         {/* Subtitle */}
@@ -55,8 +55,8 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          מעטפת היא מערכת הניהול התקין החכמה לעמותות בישראל.
-          כל המסמכים, הדיווחים והתזכורות — במקום אחד.
+          מעטפת מלווה עמותות בישראל בכל היבטי הניהול התקין —
+          עם צוות מקצועי שדואג שהכל יהיה בסדר.
         </motion.p>
 
         {/* CTAs */}
@@ -70,7 +70,7 @@ export default function Hero() {
             href={APP_URL}
             className="glow-btn bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold px-8 py-3.5 rounded-xl text-base transition-all flex items-center gap-2 shadow-xl shadow-blue-500/25"
           >
-            התחילו בחינם
+            התחילו עכשיו
             <ArrowLeft size={18} />
           </a>
           <button className="flex items-center gap-2.5 text-[#64748b] hover:text-[#1e293b] font-medium transition-colors group">

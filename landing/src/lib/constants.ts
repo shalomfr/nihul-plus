@@ -7,7 +7,7 @@ export const FEATURES = [
   {
     icon: ShieldCheck,
     title: "ניהול תקין",
-    description: "מעקב אוטומטי אחרי כל דרישות הרגולציה וציון תקינות בזמן אמת",
+    description: "ליווי מקצועי צמוד בכל דרישות הרגולציה עם ציון תקינות בזמן אמת",
     color: "#2563eb",
     bg: "#eff6ff",
   },
@@ -21,7 +21,7 @@ export const FEATURES = [
   {
     icon: Landmark,
     title: "בנק והוצאות",
-    description: "סנכרון אוטומטי עם חשבון הבנק, מעקב הוצאות ותזרים",
+    description: "חיבור לחשבון הבנק, מעקב הוצאות ותזרים עם ליווי פיננסי",
     color: "#0891b2",
     bg: "#ecfeff",
   },
@@ -42,7 +42,7 @@ export const FEATURES = [
   {
     icon: Calendar,
     title: "לוח שנה",
-    description: "תזכורות חכמות לדדליינים, ישיבות ודיווחים רגולטוריים",
+    description: "מעקב אישי אחרי דדליינים, ישיבות ודיווחים רגולטוריים",
     color: "#e11d48",
     bg: "#fff1f2",
   },
@@ -66,7 +66,7 @@ export const STATS = [
   { value: 100, suffix: "+", label: "עמותות פעילות" },
   { value: 98, suffix: "%", label: "ציון ניהול תקין ממוצע" },
   { value: 50000, suffix: "+", label: "מסמכים מנוהלים" },
-  { value: 24, suffix: "/7", label: "ניטור אוטומטי" },
+  { value: 24, suffix: "/7", label: "זמינות ותמיכה" },
 ];
 
 export const STEPS = [
@@ -77,13 +77,13 @@ export const STEPS = [
   },
   {
     number: "02",
-    title: "המערכת סורקת ומנתחת",
-    description: "מעטפת סורקת את מצב העמותה, מזהה חוסרים ובונה תוכנית פעולה",
+    title: "הצוות שלנו בודק ומנתח",
+    description: "צוות מעטפת בודק את מצב העמותה, מזהה חוסרים ובונה תוכנית פעולה מותאמת",
   },
   {
     number: "03",
-    title: "קבלו שקט נפשי",
-    description: "קבלו ציון ניהול תקין, תזכורות אוטומטיות ומלווה אישי שתמיד לצידכם",
+    title: "קבלו ליווי שוטף",
+    description: "מלווה אישי שמכיר את העמותה שלכם, מעקב צמוד ותמיכה בכל שלב",
   },
 ];
 

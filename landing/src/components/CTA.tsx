@@ -18,7 +18,7 @@ export default function CTA() {
                 מוכנים לנהל את העמותה כמו שצריך?
               </h2>
               <p className="text-blue-100 text-lg mb-10 max-w-lg mx-auto">
-                הצטרפו למאות עמותות שכבר עברו לניהול תקין אוטומטי
+                הצטרפו למאות עמותות שכבר נהנות מליווי מקצועי צמוד
               </p>
               <a
                 href={APP_URL}
@@ -28,7 +28,7 @@ export default function CTA() {
                 <ArrowLeft size={20} />
               </a>
               <p className="text-blue-200/70 text-sm mt-4">
-                ללא כרטיס אשראי · הקמה תוך 2 דקות
+                ללא התחייבות · שיחת היכרות תוך 24 שעות
               </p>
             </div>
           </div>
