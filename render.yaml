@@ -10,3 +10,14 @@ services:
         value: production
       - key: PUPPETEER_CACHE_DIR
         value: /opt/render/.cache/puppeteer
+
+  - type: web
+    name: matefet-landing
+    runtime: static
+    rootDir: landing
+    buildCommand: npm install && npm run build
+    staticPublishPath: out
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=3600, s-maxage=86400
