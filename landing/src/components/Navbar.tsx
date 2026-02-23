@@ -23,13 +23,10 @@ export default function Navbar() {
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#2563eb] to-[#1e40af] flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <span className="text-white font-bold text-lg leading-none">מ</span>
-          </div>
-          <span className="text-lg font-bold text-[#1e293b]">מעטפת</span>
+        <a href="#">
+          <img src="/logo.jpg" alt="מעטפת — ניהולית בע״מ" className="h-14 w-auto" />
         </a>
 
         {/* Links — hidden on mobile */}

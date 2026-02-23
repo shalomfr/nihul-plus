@@ -4,15 +4,9 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#2563eb] to-[#1e40af] flex items-center justify-center">
-              <span className="text-white font-bold text-sm">מ</span>
-            </div>
-            <div>
-              <span className="text-sm font-bold text-[#1e293b]">מעטפת</span>
-              <span className="text-xs text-[#94a3b8] block">ניהול תקין לעמותות</span>
-            </div>
-          </div>
+          <a href="#">
+            <img src="/logo.jpg" alt="מעטפת — ניהולית בע״מ" className="h-12 w-auto" />
+          </a>
 
           {/* Links */}
           <div className="flex items-center gap-6">

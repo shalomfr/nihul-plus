@@ -2,11 +2,10 @@
 import { motion } from "motion/react";
 import { ArrowLeft, Play } from "lucide-react";
 import { APP_URL } from "@/lib/constants";
-import EnvelopeAnimation from "@/components/EnvelopeAnimation";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-10 overflow-hidden bg-grid">
+    <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-10 overflow-hidden bg-grid">
       {/* Watermark */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 watermark whitespace-nowrap">
         מעטפת
@@ -15,11 +14,6 @@ export default function Hero() {
       {/* Decorative blurs */}
       <div className="absolute top-20 right-[10%] w-[400px] h-[400px] rounded-full bg-blue-400/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-20 left-[10%] w-[300px] h-[300px] rounded-full bg-violet-400/8 blur-[100px] pointer-events-none" />
-
-      {/* Envelope Animation — top right */}
-      <div className="absolute top-20 right-6 md:right-12 lg:right-[8%] z-20">
-        <EnvelopeAnimation />
-      </div>
 
       <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
         {/* Badge */}
