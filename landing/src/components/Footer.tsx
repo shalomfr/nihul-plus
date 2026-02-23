@@ -4,8 +4,12 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo */}
-          <a href="#">
-            <img src="/logo.jpg" alt="מעטפת — ניהולית בע״מ" className="h-12 w-auto" />
+          <a href="#" className="flex items-center gap-2">
+            <img src="/logo.png" alt="מעטפת" className="h-9 w-auto" />
+            <div>
+              <span className="text-sm font-bold text-[#1e293b]">מעטפת</span>
+              <span className="text-xs text-[#94a3b8] block">ניהולית בע״מ</span>
+            </div>
           </a>
 
           {/* Links */}
