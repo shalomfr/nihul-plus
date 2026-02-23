@@ -2,6 +2,7 @@
 import { motion } from "motion/react";
 import { ArrowLeft, Play } from "lucide-react";
 import { APP_URL } from "@/lib/constants";
+import EnvelopeAnimation from "@/components/EnvelopeAnimation";
 
 export default function Hero() {
   return (
@@ -16,11 +17,14 @@ export default function Hero() {
       <div className="absolute bottom-20 left-[10%] w-[300px] h-[300px] rounded-full bg-violet-400/8 blur-[100px] pointer-events-none" />
 
       <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+        {/* Envelope Animation */}
+        <EnvelopeAnimation />
+
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
           className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-[#e2e8f0] rounded-full px-4 py-1.5 mb-6 shadow-sm"
         >
           <span className="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse" />
@@ -34,7 +38,7 @@ export default function Hero() {
           className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight mb-6"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.15 }}
+          transition={{ duration: 0.7, delay: 0.45 }}
         >
           <span className="text-[#1e293b]">ניהול תקין.</span>{" "}
           <span className="gradient-text">אוטומטי.</span>
@@ -47,7 +51,7 @@ export default function Hero() {
           className="text-lg md:text-xl text-[#64748b] max-w-2xl mx-auto mb-10 leading-relaxed"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.35 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
         >
           מעטפת היא מערכת הניהול התקין החכמה לעמותות בישראל.
           כל המסמכים, הדיווחים והתזכורות — במקום אחד.
@@ -58,7 +62,7 @@ export default function Hero() {
           className="flex flex-wrap items-center justify-center gap-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
+          transition={{ duration: 0.6, delay: 0.75 }}
         >
           <a
             href={APP_URL}
