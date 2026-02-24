@@ -233,10 +233,9 @@ export default function ServicesContent() {
           />
         </div>
 
-        {/* Sun rays from the window */}
+        {/* Sun rays from the window — z-[5] above bg, below content z-10 */}
         <div
-          className="absolute pointer-events-none overflow-hidden"
-          style={{ top: 0, left: 0, width: "100%", height: "100%" }}
+          className="absolute inset-0 z-[5] pointer-events-none overflow-hidden"
         >
           {/* Ray origin glow */}
           <motion.div
