@@ -233,67 +233,87 @@ export default function ServicesContent() {
           />
         </div>
 
-        {/* Sun rays from the window — z-[5] above bg, below content z-10 */}
-        <div
-          className="absolute inset-0 z-[5] pointer-events-none overflow-hidden"
-        >
-          {/* Ray origin glow */}
+        {/* Sun rays from the left window — z-[5] above bg, below content z-10 */}
+        <div className="absolute inset-0 z-[5] pointer-events-none overflow-hidden">
+          {/* Sun glow at the window (left side, upper area) */}
           <motion.div
             className="absolute"
             style={{
-              top: "-5%",
-              left: "-5%",
-              width: 300,
-              height: 300,
+              top: "8%",
+              left: "-8%",
+              width: 400,
+              height: 400,
               borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(255,230,130,0.6) 0%, transparent 70%)",
-              filter: "blur(30px)",
+              background:
+                "radial-gradient(circle, rgba(255,236,153,0.7) 0%, rgba(255,220,100,0.3) 40%, transparent 70%)",
             }}
-            animate={{ opacity: [0.5, 0.8, 0.5], scale: [1, 1.1, 1] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            animate={{
+              opacity: [0.6, 1, 0.6],
+              scale: [1, 1.15, 1],
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           />
 
-          {/* Sun rays — diagonal beams from top-left */}
+          {/* Light rays fanning from the left window */}
           {[
-            { rotate: 25, width: "140%", delay: 0, dur: 8 },
-            { rotate: 35, width: "130%", delay: 1.5, dur: 10 },
-            { rotate: 48, width: "150%", delay: 0.5, dur: 9 },
-            { rotate: 60, width: "120%", delay: 2, dur: 11 },
-            { rotate: 72, width: "110%", delay: 1, dur: 7 },
+            { rotate: -15, h: 80, opacity: [0.12, 0.4, 0.2, 0.4, 0.12], dur: 9 },
+            { rotate: 5, h: 100, opacity: [0.1, 0.35, 0.15, 0.35, 0.1], dur: 11 },
+            { rotate: 22, h: 70, opacity: [0.15, 0.45, 0.2, 0.45, 0.15], dur: 8 },
+            { rotate: 38, h: 90, opacity: [0.08, 0.3, 0.12, 0.3, 0.08], dur: 12 },
+            { rotate: 52, h: 60, opacity: [0.1, 0.35, 0.18, 0.35, 0.1], dur: 10 },
+            { rotate: 65, h: 50, opacity: [0.06, 0.25, 0.1, 0.25, 0.06], dur: 13 },
           ].map((ray, i) => (
             <motion.div
-              key={i}
+              key={`ray-${i}`}
               className="absolute"
               style={{
-                top: 0,
+                top: "15%",
                 left: 0,
-                width: ray.width,
-                height: 60 + i * 12,
-                transformOrigin: "0% 0%",
+                width: "130%",
+                height: ray.h,
+                transformOrigin: "0% 50%",
                 transform: `rotate(${ray.rotate}deg)`,
-                background: `linear-gradient(90deg, rgba(255,223,100,0.35) 0%, rgba(255,240,180,0.15) 40%, transparent 85%)`,
-                filter: "blur(8px)",
+                background:
+                  "linear-gradient(90deg, rgba(255,225,120,0.5) 0%, rgba(255,240,180,0.2) 30%, rgba(255,250,220,0.08) 60%, transparent 90%)",
+                filter: "blur(12px)",
               }}
-              animate={{
-                opacity: [0.15, 0.5, 0.25, 0.5, 0.15],
-              }}
+              animate={{ opacity: ray.opacity }}
               transition={{
                 duration: ray.dur,
                 repeat: Infinity,
                 ease: "easeInOut",
-                delay: ray.delay,
+                delay: i * 0.8,
               }}
             />
           ))}
 
-          {/* Floating dust particles in the light */}
+          {/* Warm light spill on the floor / lower area */}
+          <motion.div
+            className="absolute"
+            style={{
+              bottom: "5%",
+              left: "10%",
+              width: "60%",
+              height: 200,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(ellipse, rgba(255,230,150,0.25) 0%, transparent 70%)",
+              filter: "blur(40px)",
+            }}
+            animate={{ opacity: [0.3, 0.5, 0.3], scaleX: [1, 1.05, 1] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          />
+
+          {/* Floating dust particles in the sunlight */}
           {[
-            { x: "20%", y: "30%", size: 4, dur: 12, delay: 0 },
-            { x: "35%", y: "45%", size: 3, dur: 15, delay: 2 },
-            { x: "15%", y: "55%", size: 5, dur: 10, delay: 1 },
-            { x: "45%", y: "25%", size: 3, dur: 14, delay: 3 },
-            { x: "30%", y: "60%", size: 4, dur: 11, delay: 0.5 },
-            { x: "50%", y: "40%", size: 3, dur: 13, delay: 2.5 },
+            { x: "15%", y: "25%", size: 4, dur: 14, delay: 0 },
+            { x: "25%", y: "40%", size: 3, dur: 18, delay: 2 },
+            { x: "10%", y: "50%", size: 5, dur: 12, delay: 1 },
+            { x: "35%", y: "20%", size: 3, dur: 16, delay: 3 },
+            { x: "20%", y: "60%", size: 4, dur: 13, delay: 0.5 },
+            { x: "40%", y: "35%", size: 3, dur: 15, delay: 2.5 },
+            { x: "30%", y: "55%", size: 2, dur: 17, delay: 4 },
+            { x: "18%", y: "70%", size: 3, dur: 14, delay: 1.5 },
           ].map((p, i) => (
             <motion.div
               key={`dust-${i}`}
@@ -303,13 +323,14 @@ export default function ServicesContent() {
                 top: p.y,
                 width: p.size,
                 height: p.size,
-                background: "rgba(255,240,200,0.8)",
-                filter: "blur(1px)",
+                background: "rgba(255,245,210,0.9)",
+                boxShadow: "0 0 4px rgba(255,230,150,0.6)",
               }}
               animate={{
-                y: [0, -30, 10, -20, 0],
-                x: [0, 15, -10, 5, 0],
-                opacity: [0, 0.7, 0.3, 0.8, 0],
+                y: [0, -25, 8, -18, 0],
+                x: [0, 12, -8, 4, 0],
+                opacity: [0, 0.8, 0.3, 0.9, 0],
+                scale: [0.5, 1, 0.8, 1, 0.5],
               }}
               transition={{
                 duration: p.dur,
