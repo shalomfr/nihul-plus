@@ -1,9 +1,16 @@
 "use client";
+import { useCallback, useState } from "react";
 import { motion } from "motion/react";
 import { ArrowLeft, Play } from "lucide-react";
 import { APP_URL } from "@/lib/constants";
+import DocumentStorm from "@/components/DocumentStorm";
 
 export default function Hero() {
+  const [isHeroReady, setIsHeroReady] = useState(false);
+  const handleStormSettled = useCallback(() => {
+    setIsHeroReady(true);
+  }, []);
+
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-10 overflow-hidden bg-grid">
       {/* Watermark */}
@@ -14,13 +21,14 @@ export default function Hero() {
       {/* Decorative blurs */}
       <div className="absolute top-20 right-[10%] w-[300px] md:w-[400px] h-[300px] md:h-[400px] rounded-full bg-blue-400/10 blur-[100px] md:blur-[120px] pointer-events-none" />
       <div className="absolute bottom-20 left-[10%] w-[200px] md:w-[300px] h-[200px] md:h-[300px] rounded-full bg-violet-400/8 blur-[80px] md:blur-[100px] pointer-events-none" />
+      <DocumentStorm onSettled={handleStormSettled} />
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center">
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
+          animate={isHeroReady ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.38, delay: 0.08 }}
           className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-[#e2e8f0] rounded-full px-3 sm:px-4 py-1.5 mb-6 shadow-sm"
         >
           <span className="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse" />
@@ -33,8 +41,8 @@ export default function Hero() {
         <motion.h1
           className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight mb-4 sm:mb-6"
           initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.45 }}
+          animate={isHeroReady ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.5, delay: 0.14 }}
         >
           <span className="text-[#1e293b]">ניהול תקין.</span>{" "}
           <span className="gradient-text">ליווי מקצועי.</span>
@@ -46,8 +54,8 @@ export default function Hero() {
         <motion.p
           className="text-base sm:text-lg md:text-xl text-[#64748b] max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2"
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
+          animate={isHeroReady ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.42, delay: 0.2 }}
         >
           מעטפת מלווה עמותות בישראל בכל היבטי הניהול התקין —
           עם צוות מקצועי שדואג שהכל יהיה בסדר.
@@ -57,8 +65,8 @@ export default function Hero() {
         <motion.div
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.75 }}
+          animate={isHeroReady ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.42, delay: 0.24 }}
         >
           <a
             href={APP_URL}
@@ -80,8 +88,8 @@ export default function Hero() {
       <motion.div
         className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16"
         initial={{ opacity: 0, y: 60 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        animate={isHeroReady ? { opacity: 1, y: 0 } : { opacity: 0, y: 60 }}
+        transition={{ duration: 0.58, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="relative">
           {/* Main dashboard card */}

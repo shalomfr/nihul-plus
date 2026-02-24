@@ -119,3 +119,70 @@ body {
     linear-gradient(90deg, rgba(37, 99, 235, 0.03) 1px, transparent 1px);
   background-size: 60px 60px;
 }
+
+/* ── Document storm ── */
+.storm-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.storm-anchor {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 18%;
+  width: 1px;
+  height: 1px;
+}
+
+.storm-document {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  box-shadow: 0 6px 22px rgba(15, 23, 42, 0.08);
+  padding: 10px;
+}
+
+.storm-document-header {
+  width: 48%;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.2);
+  margin-block-end: 9px;
+}
+
+.storm-document-line {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.18);
+  margin-block-end: 6px;
+}
+
+.storm-document-line-strong {
+  background: rgba(37, 99, 235, 0.22);
+}
+
+.storm-document-line-short {
+  width: 70%;
+  margin-block-end: 0;
+}
+
+@media (max-width: 767px) {
+  .storm-layer {
+    opacity: 0.72;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storm-layer {
+    opacity: 0.3;
+  }
+}
