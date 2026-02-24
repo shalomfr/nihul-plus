@@ -113,19 +113,16 @@ export default function Hero() {
               transition={{ duration: 0.5, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
             />
 
-            {/* CTA button — dismisses overlay and reveals landing page */}
-            <motion.button
-              className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold px-10 py-4 rounded-xl text-xl transition-all shadow-xl shadow-blue-500/25 cursor-pointer"
+            {/* CTA button — navigates to services landing page */}
+            <motion.a
+              href="/services"
+              className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold px-10 py-4 rounded-xl text-xl transition-all shadow-xl shadow-blue-500/25 cursor-pointer inline-block"
               initial={{ opacity: 0, y: 20 }}
               animate={showText ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 1.3, ease: [0.22, 1, 0.36, 1] }}
-              onClick={() => {
-                setVideoFading(true);
-                setIsHeroReady(true);
-              }}
             >
               מעוניין לשמוע
-            </motion.button>
+            </motion.a>
           </div>
         </div>
       )}
