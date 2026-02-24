@@ -109,20 +109,19 @@ export default function Hero() {
               })}
             </h2>
 
-            {/* Logo pops up */}
+            {/* Logo pops up — large */}
             <motion.img
               src="/logo-transparent.png"
               alt="מעטפת"
-              className="h-20 sm:h-24 md:h-32 w-auto"
+              className="h-32 sm:h-40 md:h-56 lg:h-64 w-auto"
               initial={{ opacity: 0, scale: 0.5, y: 30 }}
               animate={showText ? { opacity: 1, scale: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
             />
 
             {/* CTA button */}
-            <motion.a
-              href="#contact"
-              className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold px-8 py-3.5 rounded-xl text-lg transition-all shadow-xl shadow-blue-500/25"
+            <motion.button
+              className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold px-8 py-3.5 rounded-xl text-lg transition-all shadow-xl shadow-blue-500/25 cursor-pointer"
               initial={{ opacity: 0, y: 20 }}
               animate={showText ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 1.3, ease: [0.22, 1, 0.36, 1] }}
@@ -132,7 +131,7 @@ export default function Hero() {
               }}
             >
               מעוניין לשמוע
-            </motion.a>
+            </motion.button>
           </div>
         </div>
       )}
