@@ -73,7 +73,7 @@ export default function Hero() {
             muted
             playsInline
             preload="auto"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover blur-[2px]"
           />
 
           {/* Falling letters + logo + CTA */}
