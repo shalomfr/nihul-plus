@@ -36,13 +36,13 @@ export default function Hero() {
     };
   }, []);
 
-  /* Show text for 2.5s (letters finish ~1.4s + pause), then fade overlay out */
+  /* Show text for 4s (letters ~1.4s + logo/btn ~0.8s + pause), then fade */
   useEffect(() => {
     if (!showText) return;
     const timer = setTimeout(() => {
       setVideoFading(true);
       setIsHeroReady(true);
-    }, 2500);
+    }, 4000);
     return () => clearTimeout(timer);
   }, [showText]);
 
@@ -70,14 +70,14 @@ export default function Hero() {
             className="w-full h-full object-cover"
           />
 
-          {/* Falling letters text */}
-          <div className="absolute inset-0 flex items-center justify-center">
+          {/* Falling letters + logo + CTA */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
             <h2
               className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-[#1e293b] text-center"
               style={{ fontFamily: "'Secular One', sans-serif" }}
             >
               {"מבול של מסמכים?".split("").map((char, i) => {
-                const rot = ((i * 7 + 3) % 30) - 15; // deterministic pseudo-random
+                const rot = ((i * 7 + 3) % 30) - 15;
                 return (
                   <motion.span
                     key={i}
@@ -100,6 +100,31 @@ export default function Hero() {
                 );
               })}
             </h2>
+
+            {/* Logo pops up */}
+            <motion.img
+              src="/logo-transparent.png"
+              alt="מעטפת"
+              className="h-20 sm:h-24 md:h-32 w-auto"
+              initial={{ opacity: 0, scale: 0.5, y: 30 }}
+              animate={showText ? { opacity: 1, scale: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
+            />
+
+            {/* CTA button */}
+            <motion.a
+              href="#contact"
+              className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold px-8 py-3.5 rounded-xl text-lg transition-all shadow-xl shadow-blue-500/25"
+              initial={{ opacity: 0, y: 20 }}
+              animate={showText ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 1.3, ease: [0.22, 1, 0.36, 1] }}
+              onClick={() => {
+                setVideoFading(true);
+                setIsHeroReady(true);
+              }}
+            >
+              מעוניין לשמוע
+            </motion.a>
           </div>
         </div>
       )}
