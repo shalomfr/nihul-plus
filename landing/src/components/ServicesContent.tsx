@@ -215,29 +215,27 @@ export default function ServicesContent() {
     <main className="min-h-screen">
       {/* ── Desktop area with office background ── */}
       <section className="relative min-h-screen pt-28 pb-20 sm:pt-36 sm:pb-28 overflow-hidden">
-        {/* Background image — light overlay */}
+        {/* Background image — bright & warm */}
         <div className="absolute inset-0">
           <img
             src={`/office-bg.jpg?v=${v}`}
             alt=""
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover brightness-110"
           />
-          {/* Light overlay to wash out the image */}
-          <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px]" />
-          {/* Gradient overlay for depth */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
+          {/* Bright warm overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-white/40 to-orange-50/30" />
         </div>
 
-        {/* Animated lighting effects */}
+        {/* Warm animated lighting effects */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Warm light from window */}
-          <div className="desktop-light-1 absolute top-[10%] left-[15%] w-[500px] h-[500px] rounded-full bg-amber-200/20 blur-[120px]" />
-          {/* Cool accent light */}
-          <div className="desktop-light-2 absolute bottom-[20%] right-[10%] w-[400px] h-[400px] rounded-full bg-blue-300/15 blur-[100px]" />
-          {/* Soft pink highlight */}
-          <div className="desktop-light-3 absolute top-[40%] right-[30%] w-[350px] h-[350px] rounded-full bg-rose-200/10 blur-[90px]" />
-          {/* Shimmer overlay */}
-          <div className="desktop-shimmer absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
+          {/* Golden sunlight from window */}
+          <div className="desktop-light-1 absolute top-[5%] left-[10%] w-[600px] h-[600px] rounded-full bg-amber-300/25 blur-[130px]" />
+          {/* Warm glow center */}
+          <div className="desktop-light-2 absolute top-[30%] right-[20%] w-[500px] h-[500px] rounded-full bg-orange-200/20 blur-[110px]" />
+          {/* Soft warm highlight bottom */}
+          <div className="desktop-light-3 absolute bottom-[10%] left-[30%] w-[450px] h-[450px] rounded-full bg-yellow-200/15 blur-[100px]" />
+          {/* Warm shimmer overlay */}
+          <div className="desktop-shimmer absolute inset-0 bg-gradient-to-tr from-amber-100/5 via-white/8 to-orange-100/5" />
         </div>
 
         {/* BSH */}
