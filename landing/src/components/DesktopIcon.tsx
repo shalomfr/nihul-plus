@@ -28,7 +28,7 @@ export default function DesktopIcon({
     >
       {/* macOS-style icon */}
       <div
-        className={`mac-icon w-[76px] h-[76px] ${gradient} flex items-center justify-center`}
+        className={`mac-icon w-[80px] h-[80px] ${gradient} flex items-center justify-center`}
       >
         <div className="relative z-10 flex flex-col items-center gap-0.5">
           {icon}

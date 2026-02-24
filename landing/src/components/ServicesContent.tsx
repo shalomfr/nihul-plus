@@ -7,69 +7,113 @@ import MacWindow from "@/components/MacWindow";
 
 const v = process.env.NEXT_PUBLIC_BUILD_ID || "";
 
-/* ── SVG icons for each service (macOS-style) ── */
+/* ── SVG icons for each service (macOS-style, rich & polished) ── */
 const icons = {
+  /* ליווי ניהולי — Dashboard / management */
   a: (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect x="6" y="8" width="24" height="18" rx="3" stroke="white" strokeWidth="2" />
-      <path d="M6 14h24" stroke="white" strokeWidth="1.5" />
-      <circle cx="18" cy="22" r="2" fill="white" fillOpacity="0.7" />
-      <path d="M12 11h4" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <rect x="4" y="6" width="32" height="24" rx="4" fill="white" fillOpacity="0.2" />
+      <rect x="4" y="6" width="32" height="24" rx="4" stroke="white" strokeWidth="1.8" />
+      <rect x="5" y="7" width="30" height="5" rx="2" fill="white" fillOpacity="0.15" />
+      <circle cx="8" cy="9.5" r="1" fill="#ff5f57" />
+      <circle cx="11.5" cy="9.5" r="1" fill="#febc2e" />
+      <circle cx="15" cy="9.5" r="1" fill="#28c840" />
+      <rect x="8" y="16" width="10" height="6" rx="1.5" fill="white" fillOpacity="0.35" />
+      <rect x="8" y="24" width="10" height="3" rx="1" fill="white" fillOpacity="0.2" />
+      <rect x="21" y="16" width="11" height="11" rx="1.5" fill="white" fillOpacity="0.15" />
+      <path d="M23 24 L26 20 L28 22 L30 18" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  /* ליווי רגולטורי — Shield + document */
   b: (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <path d="M10 6h16a2 2 0 0 1 2 2v20a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" stroke="white" strokeWidth="2" />
-      <path d="M13 13h10M13 17h10M13 21h6" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M22 22l4 4" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="22" cy="22" r="3" stroke="white" strokeWidth="1.5" />
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <path d="M20 4L32 10V20C32 28 26 33 20 36C14 33 8 28 8 20V10L20 4Z" fill="white" fillOpacity="0.15" />
+      <path d="M20 4L32 10V20C32 28 26 33 20 36C14 33 8 28 8 20V10L20 4Z" stroke="white" strokeWidth="1.8" strokeLinejoin="round" />
+      <rect x="14" y="14" width="12" height="14" rx="2" fill="white" fillOpacity="0.25" />
+      <path d="M17 18h6M17 21h6M17 24h4" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="20" cy="10" r="2" fill="white" fillOpacity="0.5" />
     </svg>
   ),
+  /* סעיף 46 — Tax / receipt with ₪ */
   c: (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="18" r="11" stroke="white" strokeWidth="2" />
-      <path d="M18 11v7l5 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M14 26l-2 4M22 26l2 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <path d="M10 6H26L30 10V34H10V6Z" fill="white" fillOpacity="0.15" />
+      <path d="M10 6H26L30 10V34H10V6Z" stroke="white" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M26 6V10H30" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
+      <text x="20" y="24" textAnchor="middle" fill="white" fillOpacity="0.9" fontSize="13" fontWeight="700" fontFamily="system-ui">₪</text>
+      <path d="M14 29h12" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M14 31h8" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
+      <circle cx="30" cy="12" r="5" fill="white" fillOpacity="0.25" stroke="white" strokeWidth="1.3" />
+      <path d="M28.5 12l1.2 1.2 2.3-2.4" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  /* ניהול משברים — Alert / fire */
   d: (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <path d="M18 8l2.5 5 5.5.8-4 3.9.9 5.5L18 20.7l-4.9 2.5.9-5.5-4-3.9 5.5-.8L18 8z" stroke="white" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M8 28h20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M11 25h14" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <path d="M20 4L36 32H4L20 4Z" fill="white" fillOpacity="0.12" />
+      <path d="M20 4L36 32H4L20 4Z" stroke="white" strokeWidth="1.8" strokeLinejoin="round" />
+      <rect x="18.5" y="14" width="3" height="10" rx="1.5" fill="white" fillOpacity="0.85" />
+      <circle cx="20" cy="27.5" r="1.8" fill="white" fillOpacity="0.85" />
+      <path d="M12 34h16" stroke="white" strokeWidth="1.3" strokeLinecap="round" opacity="0.4" />
     </svg>
   ),
+  /* רשויות ציבוריות — Government building */
   e: (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect x="6" y="10" width="24" height="16" rx="2" stroke="white" strokeWidth="2" />
-      <path d="M6 16h24" stroke="white" strokeWidth="1.5" />
-      <rect x="10" y="20" width="4" height="3" rx="0.5" fill="white" fillOpacity="0.6" />
-      <rect x="16" y="20" width="4" height="3" rx="0.5" fill="white" fillOpacity="0.6" />
-      <rect x="22" y="20" width="4" height="3" rx="0.5" fill="white" fillOpacity="0.6" />
-      <path d="M14 7l4 3 4-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <path d="M20 4L34 12H6L20 4Z" fill="white" fillOpacity="0.25" />
+      <path d="M20 4L34 12H6L20 4Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
+      <rect x="6" y="12" width="28" height="3" rx="1" fill="white" fillOpacity="0.3" />
+      <rect x="9" y="15" width="3.5" height="14" rx="0.8" fill="white" fillOpacity="0.4" />
+      <rect x="15.5" y="15" width="3.5" height="14" rx="0.8" fill="white" fillOpacity="0.4" />
+      <rect x="22" y="15" width="3.5" height="14" rx="0.8" fill="white" fillOpacity="0.4" />
+      <rect x="28" y="15" width="3.5" height="14" rx="0.8" fill="white" fillOpacity="0.4" />
+      <rect x="6" y="29" width="28" height="3" rx="1" fill="white" fillOpacity="0.3" />
+      <circle cx="20" cy="8.5" r="1.5" fill="white" fillOpacity="0.6" />
+      <rect x="4" y="32" width="32" height="2" rx="1" fill="white" fillOpacity="0.2" />
     </svg>
   ),
+  /* סיכונים ונהלים — Clipboard with checkmarks */
   f: (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <path d="M18 6v24M6 18h24" stroke="white" strokeWidth="1.5" opacity="0.3" />
-      <circle cx="18" cy="18" r="11" stroke="white" strokeWidth="2" />
-      <circle cx="18" cy="18" r="5" stroke="white" strokeWidth="1.5" />
-      <circle cx="18" cy="18" r="1.5" fill="white" />
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <rect x="8" y="8" width="24" height="28" rx="3" fill="white" fillOpacity="0.15" />
+      <rect x="8" y="8" width="24" height="28" rx="3" stroke="white" strokeWidth="1.8" />
+      <rect x="14" y="4" width="12" height="6" rx="2" fill="white" fillOpacity="0.3" stroke="white" strokeWidth="1.3" />
+      <circle cx="14" cy="18" r="2" fill="white" fillOpacity="0.3" stroke="white" strokeWidth="1.2" />
+      <path d="M13 18l0.8 0.8 1.8-1.8" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M19 18h9" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="14" cy="25" r="2" fill="white" fillOpacity="0.3" stroke="white" strokeWidth="1.2" />
+      <path d="M13 25l0.8 0.8 1.8-1.8" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M19 25h9" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="14" cy="32" r="2" fill="white" fillOpacity="0.15" stroke="white" strokeWidth="1.2" />
+      <path d="M19 32h6" stroke="white" strokeWidth="1.3" strokeLinecap="round" opacity="0.5" />
     </svg>
   ),
+  /* מעטפת חודשית — Calendar envelope */
   g: (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect x="8" y="8" width="20" height="20" rx="4" stroke="white" strokeWidth="2" />
-      <path d="M14 14h8M14 18h8M14 22h5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="26" cy="10" r="4" fill="white" fillOpacity="0.9" stroke="white" strokeWidth="1" />
-      <path d="M24.5 10h3M26 8.5v3" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <rect x="6" y="10" width="28" height="24" rx="3" fill="white" fillOpacity="0.15" />
+      <rect x="6" y="10" width="28" height="24" rx="3" stroke="white" strokeWidth="1.8" />
+      <rect x="6" y="10" width="28" height="8" rx="3" fill="white" fillOpacity="0.25" />
+      <rect x="12" y="6" width="2.5" height="6" rx="1.2" fill="white" fillOpacity="0.7" />
+      <rect x="25.5" y="6" width="2.5" height="6" rx="1.2" fill="white" fillOpacity="0.7" />
+      <text x="20" y="29" textAnchor="middle" fill="white" fillOpacity="0.9" fontSize="12" fontWeight="700" fontFamily="system-ui">31</text>
+      <path d="M11 22h4M16 22h4M21 22h4M26 22h3" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.35" />
+      <circle cx="32" cy="12" r="5" fill="white" fillOpacity="0.3" stroke="white" strokeWidth="1.2" />
+      <path d="M30 12h4M32 10v4" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   ),
+  /* הקמת עמותה — Rocket / launch */
   h: (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <path d="M18 8l10 6v12l-10 6-10-6V14l10-6z" stroke="white" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M18 20v12M8 14l10 6 10-6" stroke="white" strokeWidth="1.5" />
-      <circle cx="18" cy="16" r="2" fill="white" fillOpacity="0.7" />
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <path d="M20 4C20 4 28 10 28 22L24 28H16L12 22C12 10 20 4 20 4Z" fill="white" fillOpacity="0.2" />
+      <path d="M20 4C20 4 28 10 28 22L24 28H16L12 22C12 10 20 4 20 4Z" stroke="white" strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="20" cy="17" r="3" fill="white" fillOpacity="0.35" stroke="white" strokeWidth="1.3" />
+      <path d="M16 28L14 34L18 32" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M24 28L26 34L22 32" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M18 33h4" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M17 36h6" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
+      <path d="M8 18C10 16 12 16 12 18" stroke="white" strokeWidth="1.3" strokeLinecap="round" opacity="0.5" />
+      <path d="M32 18C30 16 28 16 28 18" stroke="white" strokeWidth="1.3" strokeLinecap="round" opacity="0.5" />
     </svg>
   ),
 };
