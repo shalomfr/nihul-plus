@@ -45,7 +45,7 @@ jobs:
       - name: Create deployment archive
         run: |
           cd app
-          zip -r ../deployment.zip .next package.json package-lock.json prisma public node_modules
+          zip -r ../deployment.zip .next src package.json package-lock.json prisma public node_modules
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
