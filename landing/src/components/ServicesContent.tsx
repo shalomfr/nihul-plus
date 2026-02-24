@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
-import { AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import DesktopIcon from "@/components/DesktopIcon";
 import MacWindow from "@/components/MacWindow";
@@ -220,22 +220,88 @@ export default function ServicesContent() {
           <img
             src={`/office-bg.jpg?v=${v}`}
             alt=""
-            className="w-full h-full object-cover brightness-110"
+            className="w-full h-full object-cover"
+            style={{ filter: "brightness(1.1)" }}
           />
           {/* Bright warm overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-white/40 to-orange-50/30" />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(255,251,235,0.5), rgba(255,255,255,0.4), rgba(255,247,237,0.3))",
+            }}
+          />
         </div>
 
-        {/* Warm animated lighting effects */}
+        {/* Warm animated lighting effects (Framer Motion) */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {/* Golden sunlight from window */}
-          <div className="desktop-light-1 absolute top-[5%] left-[10%] w-[600px] h-[600px] rounded-full bg-amber-300/25 blur-[130px]" />
+          <motion.div
+            className="absolute rounded-full"
+            style={{
+              top: "5%",
+              left: "10%",
+              width: 600,
+              height: 600,
+              background: "radial-gradient(circle, rgba(252,211,77,0.35) 0%, transparent 70%)",
+              filter: "blur(80px)",
+            }}
+            animate={{
+              x: [0, 50, -25, 0],
+              y: [0, -30, 25, 0],
+              scale: [1, 1.12, 0.95, 1],
+              opacity: [0.5, 0.7, 0.4, 0.5],
+            }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          />
           {/* Warm glow center */}
-          <div className="desktop-light-2 absolute top-[30%] right-[20%] w-[500px] h-[500px] rounded-full bg-orange-200/20 blur-[110px]" />
+          <motion.div
+            className="absolute rounded-full"
+            style={{
+              top: "30%",
+              right: "20%",
+              width: 500,
+              height: 500,
+              background: "radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)",
+              filter: "blur(70px)",
+            }}
+            animate={{
+              x: [0, -40, 20, 0],
+              y: [0, 40, -20, 0],
+              scale: [1, 1.1, 0.96, 1],
+              opacity: [0.4, 0.6, 0.35, 0.4],
+            }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+          />
           {/* Soft warm highlight bottom */}
-          <div className="desktop-light-3 absolute bottom-[10%] left-[30%] w-[450px] h-[450px] rounded-full bg-yellow-200/15 blur-[100px]" />
-          {/* Warm shimmer overlay */}
-          <div className="desktop-shimmer absolute inset-0 bg-gradient-to-tr from-amber-100/5 via-white/8 to-orange-100/5" />
+          <motion.div
+            className="absolute rounded-full"
+            style={{
+              bottom: "10%",
+              left: "30%",
+              width: 450,
+              height: 450,
+              background: "radial-gradient(circle, rgba(253,224,71,0.25) 0%, transparent 70%)",
+              filter: "blur(60px)",
+            }}
+            animate={{
+              x: [0, 35, -15, 0],
+              y: [0, 15, -25, 0],
+              scale: [1, 1.06, 0.94, 1],
+              opacity: [0.35, 0.55, 0.3, 0.35],
+            }}
+            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+          />
+          {/* Warm shimmer sweep */}
+          <motion.div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(135deg, transparent 30%, rgba(255,251,235,0.15) 50%, transparent 70%)",
+            }}
+            animate={{ x: ["-100%", "100%"] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", repeatDelay: 4 }}
+          />
         </div>
 
         {/* BSH */}
