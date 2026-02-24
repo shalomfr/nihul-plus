@@ -218,7 +218,7 @@ export default function ServicesContent() {
         {/* Background image — light overlay */}
         <div className="absolute inset-0">
           <img
-            src={`/office-bg.png?v=${v}`}
+            src={`/office-bg.jpg?v=${v}`}
             alt=""
             className="w-full h-full object-cover"
           />
