@@ -66,6 +66,7 @@ export default function Hero() {
           <video
             ref={videoRef}
             src={`/hero-video.mp4?v=${v}`}
+            poster={`/hero-poster.webp?v=${v}`}
             muted
             playsInline
             preload="auto"
