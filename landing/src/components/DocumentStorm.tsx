@@ -1,198 +1,480 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
+import { RoundedBox, ContactShadows } from "@react-three/drei";
+import * as THREE from "three";
 import gsap from "gsap";
 
+/* ── Types ── */
 interface DocumentStormProps {
   onSettled?: () => void;
 }
 
-interface DocumentDescriptor {
+interface DocDescriptor {
   id: number;
-  width: number;
-  height: number;
-  targetX: number;
-  targetY: number;
-  initialRotate: number;
+  w: number;
+  h: number;
+  tx: number;
+  ty: number;
+  tz: number;
+  rx0: number;
+  ry0: number;
+  rz0: number;
   depth: number;
+  variant: "default" | "chart" | "checklist" | "header" | "image";
+  hue: number;
 }
 
-const MOBILE_BREAKPOINT = 767;
-const DESKTOP_DOCUMENT_COUNT = 24;
-const MOBILE_DOCUMENT_COUNT = 12;
+/* ── Constants ── */
+const MOBILE_BP = 767;
+const DESKTOP_N = 28;
+const MOBILE_N = 14;
+const VARIANTS: DocDescriptor["variant"][] = [
+  "default",
+  "chart",
+  "checklist",
+  "header",
+  "image",
+];
 
-function getDeterministicRandom(seed: number): number {
-  const value = Math.sin(seed * 12.9898) * 43758.5453;
-  return value - Math.floor(value);
+/* ── Deterministic random ── */
+function seeded(seed: number) {
+  const v = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return v - Math.floor(v);
 }
 
-function buildDocumentDescriptors(documentCount: number): DocumentDescriptor[] {
-  return Array.from({ length: documentCount }, (_, index) => {
-    const baseSeed = index + 1;
-    const width = 88 + Math.floor(getDeterministicRandom(baseSeed) * 32);
-    const height = 112 + Math.floor(getDeterministicRandom(baseSeed + 2) * 36);
-    const targetX = -320 + Math.floor(getDeterministicRandom(baseSeed + 4) * 640);
-    const targetY = -40 + Math.floor(getDeterministicRandom(baseSeed + 6) * 260);
-    const initialRotate = -28 + getDeterministicRandom(baseSeed + 8) * 56;
-    const depth = 0.65 + getDeterministicRandom(baseSeed + 10) * 0.35;
-
+/* ── Descriptor builder ── */
+function buildDescriptors(n: number): DocDescriptor[] {
+  return Array.from({ length: n }, (_, i) => {
+    const s = i + 1;
+    const depth = seeded(s * 7);
     return {
-      id: index,
-      width,
-      height,
-      targetX,
-      targetY,
-      initialRotate,
+      id: i,
+      w: 0.8 + seeded(s) * 0.4,
+      h: 1.0 + seeded(s + 2) * 0.45,
+      tx: (seeded(s + 4) - 0.5) * 8,
+      ty: (seeded(s + 6) - 0.3) * 5,
+      tz: (depth - 0.5) * 3,
+      rx0: (seeded(s + 10) - 0.5) * 0.9,
+      ry0: (seeded(s + 12) - 0.5) * 1.0,
+      rz0: (seeded(s + 8) - 0.5) * 1.2,
       depth,
+      variant: VARIANTS[Math.floor(seeded(s + 14) * VARIANTS.length)],
+      hue: 210 + Math.floor(seeded(s + 16) * 40),
     };
   });
 }
 
-export default function DocumentStorm({ onSettled }: DocumentStormProps) {
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const documentRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const settledRef = useRef(false);
-  const [documentCount, setDocumentCount] = useState(DESKTOP_DOCUMENT_COUNT);
+/* ══════════════════════════════════════
+   Procedural Canvas Textures
+   ══════════════════════════════════════ */
 
-  const descriptors = useMemo(
-    () => buildDocumentDescriptors(documentCount),
-    [documentCount],
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawBar(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  color: string,
+) {
+  ctx.fillStyle = color;
+  roundRect(ctx, x, y, w, 10, 5);
+  ctx.fill();
+}
+
+function drawLine(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  color: string,
+) {
+  ctx.fillStyle = color;
+  roundRect(ctx, x, y, w, 7, 4);
+  ctx.fill();
+}
+
+function generateTexture(
+  variant: DocDescriptor["variant"],
+  hue: number,
+): THREE.CanvasTexture {
+  const W = 256,
+    H = 320,
+    P = 20;
+  const cv = document.createElement("canvas");
+  cv.width = W;
+  cv.height = H;
+  const ctx = cv.getContext("2d")!;
+  const a = `hsla(${hue},72%,58%,`;
+  const gray = "rgba(100,116,139,0.14)";
+  const fullW = W - P * 2;
+
+  // White background + border
+  ctx.fillStyle = "#fff";
+  roundRect(ctx, 0, 0, W, H, 12);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(226,232,240,0.7)";
+  ctx.lineWidth = 2;
+  roundRect(ctx, 1, 1, W - 2, H - 2, 11);
+  ctx.stroke();
+
+  switch (variant) {
+    case "default":
+      drawBar(ctx, P, 28, W * 0.5, a + "0.25)");
+      drawLine(ctx, P, 52, fullW, a + "0.16)");
+      drawLine(ctx, P, 70, fullW, gray);
+      drawLine(ctx, P, 88, fullW * 0.65, gray);
+      break;
+
+    case "chart": {
+      drawBar(ctx, P, 28, W * 0.4, a + "0.25)");
+      const barW = (fullW - 24) / 5;
+      const heights = [0.35, 0.57, 0.8, 0.93, 0.65];
+      const opacities = [0.22, 0.33, 0.45, 0.6, 0.38];
+      heights.forEach((hf, i) => {
+        const bH = 80 * hf;
+        ctx.fillStyle = `hsla(${hue},72%,58%,${opacities[i]})`;
+        roundRect(ctx, P + i * (barW + 6), 55 + 80 - bH, barW, bH, 4);
+        ctx.fill();
+      });
+      drawLine(ctx, P, 150, fullW * 0.65, gray);
+      break;
+    }
+
+    case "checklist": {
+      drawBar(ctx, P, 28, W * 0.55, a + "0.25)");
+      const fracs = [0.8, 0.6, 0.9];
+      [true, true, false].forEach((checked, idx) => {
+        const y = 55 + idx * 28;
+        ctx.strokeStyle = a + "0.35)";
+        ctx.lineWidth = 2;
+        roundRect(ctx, P, y, 14, 14, 3);
+        ctx.stroke();
+        if (checked) {
+          ctx.strokeStyle = `hsla(${hue},72%,48%,0.7)`;
+          ctx.lineWidth = 2.5;
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          ctx.beginPath();
+          ctx.moveTo(P + 3, y + 8);
+          ctx.lineTo(P + 6, y + 11);
+          ctx.lineTo(P + 11, y + 4);
+          ctx.stroke();
+        }
+        drawLine(ctx, P + 22, y + 3, (fullW - 22) * fracs[idx], gray);
+      });
+      break;
+    }
+
+    case "header":
+      ctx.fillStyle = a + "0.12)";
+      roundRect(ctx, P, 24, fullW, 58, 8);
+      ctx.fill();
+      drawBar(ctx, P + 8, 34, fullW * 0.6, a + "0.35)");
+      drawLine(ctx, P + 8, 56, fullW * 0.85, gray);
+      drawLine(ctx, P, 100, fullW, gray);
+      drawLine(ctx, P, 118, fullW * 0.65, gray);
+      break;
+
+    case "image":
+      drawBar(ctx, P, 28, W * 0.45, a + "0.25)");
+      ctx.fillStyle = `hsla(${hue},60%,65%,0.12)`;
+      roundRect(ctx, P, 52, fullW, 100, 8);
+      ctx.fill();
+      ctx.strokeStyle = `hsla(${hue},60%,55%,0.35)`;
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(P + 20, 132);
+      ctx.lineTo(P + 50, 74);
+      ctx.lineTo(P + 80, 104);
+      ctx.lineTo(P + 120, 64);
+      ctx.lineTo(P + 160, 114);
+      ctx.stroke();
+      ctx.fillStyle = `hsla(${hue},60%,55%,0.25)`;
+      ctx.beginPath();
+      ctx.arc(P + 40, 82, 10, 0, Math.PI * 2);
+      ctx.fill();
+      drawLine(ctx, P, 168, fullW * 0.65, gray);
+      break;
+  }
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/* ══════════════════════════════════════
+   DocCard – single 3D document mesh
+   ══════════════════════════════════════ */
+
+function DocCard({
+  desc,
+  setRef,
+}: {
+  desc: DocDescriptor;
+  setRef: (m: THREE.Mesh | null) => void;
+}) {
+  const tex = useMemo(
+    () => generateTexture(desc.variant, desc.hue),
+    [desc.variant, desc.hue],
   );
-
-  const finalizeTimeline = useCallback(() => {
-    if (settledRef.current) {
-      return;
-    }
-
-    settledRef.current = true;
-    onSettled?.();
-  }, [onSettled]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
-    const updateCount = () => {
-      setDocumentCount(
-        mediaQuery.matches ? MOBILE_DOCUMENT_COUNT : DESKTOP_DOCUMENT_COUNT,
-      );
-    };
-
-    updateCount();
-    mediaQuery.addEventListener("change", updateCount);
-
-    return () => {
-      mediaQuery.removeEventListener("change", updateCount);
-    };
-  }, []);
-
-  useEffect(() => {
-    settledRef.current = false;
-    const documentNodes = documentRefs.current.filter(
-      (node): node is HTMLDivElement => node !== null,
-    );
-
-    if (!rootRef.current || documentNodes.length === 0) {
-      finalizeTimeline();
-      return;
-    }
-
-    const context = gsap.context(() => {
-      const prefersReducedMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)",
-      ).matches;
-
-      if (prefersReducedMotion) {
-        gsap.set(documentNodes, {
-          x: (index: number) => descriptors[index].targetX,
-          y: (index: number) => descriptors[index].targetY,
-          rotate: 0,
-          scale: 1,
-          opacity: 1,
-          filter: "blur(0px)",
-        });
-        finalizeTimeline();
-        return;
-      }
-
-      const timeline = gsap.timeline({
-        defaults: { ease: "power3.out" },
-        onComplete: finalizeTimeline,
-      });
-
-      timeline.set(documentNodes, {
-        transformOrigin: "center center",
-        x: (index: number) => descriptors[index].targetX * 1.2,
-        y: (index: number) => -window.innerHeight - index * 28,
-        rotate: (index: number) => descriptors[index].initialRotate,
-        scale: (index: number) => descriptors[index].depth,
-        opacity: 0.2,
-        filter: "blur(6px)",
-      });
-
-      timeline.to(documentNodes, {
-        duration: 0.78,
-        y: (index: number) => descriptors[index].targetY + 180,
-        x: (index: number) => descriptors[index].targetX * 0.85,
-        rotate: (index: number) => descriptors[index].initialRotate * 1.1,
-        scale: 1,
-        opacity: 0.92,
-        filter: "blur(1.2px)",
-        ease: "power2.in",
-        stagger: { each: 0.03, from: "random" },
-      });
-
-      timeline.to(documentNodes, {
-        duration: 0.56,
-        y: (index: number) => descriptors[index].targetY,
-        x: (index: number) => descriptors[index].targetX,
-        rotate: (index: number) => descriptors[index].initialRotate * 0.25,
-        filter: "blur(0.6px)",
-        opacity: 1,
-        ease: "power3.out",
-        stagger: { each: 0.02, from: "center" },
-      });
-
-      timeline.to(documentNodes, {
-        duration: 0.42,
-        rotate: 0,
-        filter: "blur(0px)",
-        boxShadow: "0 10px 28px rgba(15, 23, 42, 0.12)",
-        ease: "power2.out",
-        stagger: { each: 0.015, from: "edges" },
-      });
-    }, rootRef);
-
-    return () => {
-      context.revert();
-    };
-  }, [descriptors, finalizeTimeline]);
+  useEffect(() => () => tex.dispose(), [tex]);
 
   return (
-    <div ref={rootRef} className="storm-layer" aria-hidden="true">
-      <div className="storm-anchor">
-        {descriptors.map((descriptor, index) => (
-          <div
-            key={descriptor.id}
-            ref={(node) => {
-              documentRefs.current[index] = node;
-            }}
-            className="storm-document"
-            style={{
-              width: `${descriptor.width}px`,
-              height: `${descriptor.height}px`,
-              zIndex: 5 + Math.round(descriptor.depth * 10),
-            }}
-          >
-            <div className="storm-document-header" />
-            <div className="storm-document-line storm-document-line-strong" />
-            <div className="storm-document-line" />
-            <div className="storm-document-line storm-document-line-short" />
-          </div>
-        ))}
-      </div>
+    <RoundedBox
+      ref={setRef}
+      args={[desc.w, desc.h, 0.02]}
+      radius={0.06}
+      smoothness={4}
+    >
+      <meshStandardMaterial
+        map={tex}
+        transparent
+        opacity={0}
+        side={THREE.DoubleSide}
+      />
+    </RoundedBox>
+  );
+}
+
+/* ══════════════════════════════════════
+   Scene – lights, shadows, GSAP timeline
+   ══════════════════════════════════════ */
+
+function Scene({
+  descriptors,
+  onDone,
+}: {
+  descriptors: DocDescriptor[];
+  onDone: () => void;
+}) {
+  const meshRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const { invalidate } = useThree();
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    doneRef.current = false;
+    const meshes = meshRefs.current.filter(
+      (m): m is THREE.Mesh => m !== null,
+    );
+    if (meshes.length === 0) {
+      onDone();
+      return;
+    }
+
+    /* reduced motion → skip animation, show final state */
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      meshes.forEach((m, i) => {
+        const d = descriptors[i];
+        m.position.set(d.tx, d.ty, d.tz);
+        m.rotation.set(0, 0, 0);
+        (m.material as THREE.MeshStandardMaterial).opacity = 1;
+      });
+      invalidate();
+      onDone();
+      return;
+    }
+
+    /* set initial positions: above the viewport with wild rotation */
+    meshes.forEach((m, i) => {
+      const d = descriptors[i];
+      m.position.set(
+        d.tx + (seeded((i + 1) * 3) - 0.5) * 4,
+        12 + seeded((i + 1) * 5) * 6,
+        d.tz,
+      );
+      m.rotation.set(d.rx0 * 3, d.ry0 * 3, d.rz0 * 3);
+      (m.material as THREE.MeshStandardMaterial).opacity = 0;
+    });
+    invalidate();
+
+    /* ── GSAP Timeline ── */
+    const tl = gsap.timeline({ onUpdate: () => invalidate() });
+
+    /* Phase 1 – Storm: fall from above (0.9s, staggered) */
+    tl.addLabel("storm", 0);
+    meshes.forEach((m, i) => {
+      const d = descriptors[i];
+      const stagger = seeded((i + 1) * 7) * 0.4;
+      tl.to(
+        m.position,
+        {
+          x: d.tx * 0.9,
+          y: d.ty + 0.8,
+          z: d.tz,
+          duration: 0.9,
+          ease: "power2.in",
+        },
+        `storm+=${stagger}`,
+      );
+      tl.to(
+        m.rotation,
+        {
+          x: d.rx0,
+          y: d.ry0,
+          z: d.rz0,
+          duration: 0.9,
+          ease: "power2.in",
+        },
+        `storm+=${stagger}`,
+      );
+      tl.to(
+        m.material,
+        {
+          opacity: 0.5 + d.depth * 0.5,
+          duration: 0.6,
+          ease: "power1.in",
+        },
+        `storm+=${stagger}`,
+      );
+    });
+
+    /* Phase 2 – Converge: to target positions (0.65s) */
+    tl.addLabel("converge", ">-0.25");
+    meshes.forEach((m, i) => {
+      const d = descriptors[i];
+      tl.to(
+        m.position,
+        { x: d.tx, y: d.ty, z: d.tz, duration: 0.65, ease: "power3.out" },
+        "converge",
+      );
+      tl.to(
+        m.rotation,
+        {
+          x: 0.09,
+          y: 0,
+          z: (seeded((i + 1) * 3) - 0.5) * 0.06,
+          duration: 0.65,
+          ease: "power3.out",
+        },
+        "converge",
+      );
+      tl.to(m.material, { opacity: 1, duration: 0.45 }, "converge");
+    });
+
+    /* Phase 3 – Settle: flatten rotation (0.48s) */
+    tl.addLabel("settle", ">-0.1");
+    meshes.forEach((m, i) => {
+      tl.to(
+        m.rotation,
+        {
+          x: 0,
+          y: 0,
+          z: (seeded((i + 1) * 5) - 0.5) * 0.05,
+          duration: 0.48,
+          ease: "back.out(1.2)",
+        },
+        "settle",
+      );
+    });
+
+    /* Phase 4 – Signal done */
+    tl.call(
+      () => {
+        if (!doneRef.current) {
+          doneRef.current = true;
+          onDone();
+        }
+      },
+      [],
+      ">+0.05",
+    );
+
+    return () => {
+      tl.kill();
+    };
+  }, [descriptors, onDone, invalidate]);
+
+  return (
+    <>
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[5, 8, 5]} intensity={0.8} />
+      <ContactShadows
+        position={[0, -3.5, 0]}
+        opacity={0.35}
+        scale={14}
+        blur={2.5}
+        far={6}
+      />
+      {descriptors.map((d, i) => (
+        <DocCard
+          key={d.id}
+          desc={d}
+          setRef={(m) => {
+            meshRefs.current[i] = m;
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+/* ══════════════════════════════════════
+   DocumentStorm – main export
+   ══════════════════════════════════════ */
+
+export default function DocumentStorm({ onSettled }: DocumentStormProps) {
+  const [count, setCount] = useState(DESKTOP_N);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const descriptors = useMemo(() => buildDescriptors(count), [count]);
+
+  /* Responsive document count */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BP}px)`);
+    const update = () => setCount(mq.matches ? MOBILE_N : DESKTOP_N);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  /* After 3D settle → fade the canvas wrapper → call onSettled */
+  const handleDone = useCallback(() => {
+    if (wrapperRef.current) {
+      gsap.to(wrapperRef.current, {
+        opacity: 0,
+        duration: 0.3,
+        ease: "power2.inOut",
+        onComplete: () => onSettled?.(),
+      });
+    } else {
+      onSettled?.();
+    }
+  }, [onSettled]);
+
+  return (
+    <div ref={wrapperRef} className="storm-canvas-wrapper" aria-hidden="true">
+      <Canvas
+        frameloop="demand"
+        dpr={[1, 1.5]}
+        camera={{ fov: 50, position: [0, 0, 8], near: 0.1, far: 50 }}
+        gl={{ alpha: true, antialias: true }}
+      >
+        <Scene descriptors={descriptors} onDone={handleDone} />
+      </Canvas>
     </div>
   );
 }
