@@ -1,18 +1,67 @@
 "use client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { ArrowLeft, Play } from "lucide-react";
 import { APP_URL } from "@/lib/constants";
-import DocumentStorm from "@/components/DocumentStorm";
 
 export default function Hero() {
   const [isHeroReady, setIsHeroReady] = useState(false);
-  const handleStormSettled = useCallback(() => {
-    setIsHeroReady(true);
+  const [videoFading, setVideoFading] = useState(false);
+  const [videoHidden, setVideoHidden] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleCanPlay = () => {
+      video.play().catch(() => {
+        // Autoplay blocked — fade out immediately
+        setVideoFading(true);
+        setIsHeroReady(true);
+      });
+    };
+
+    const handleEnded = () => {
+      setVideoFading(true);
+      setIsHeroReady(true);
+    };
+
+    video.addEventListener("canplaythrough", handleCanPlay);
+    video.addEventListener("ended", handleEnded);
+
+    return () => {
+      video.removeEventListener("canplaythrough", handleCanPlay);
+      video.removeEventListener("ended", handleEnded);
+    };
   }, []);
+
+  /* Once fading starts, remove video from DOM after transition */
+  useEffect(() => {
+    if (!videoFading) return;
+    const timer = setTimeout(() => setVideoHidden(true), 2000);
+    return () => clearTimeout(timer);
+  }, [videoFading]);
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-10 overflow-hidden bg-grid">
+      {/* ── Full-cover video ── */}
+      {!videoHidden && (
+        <div
+          className="absolute inset-0 z-20 transition-opacity duration-[2000ms] ease-in-out"
+          style={{ opacity: videoFading ? 0 : 1 }}
+        >
+          <video
+            ref={videoRef}
+            src="/hero-video.mp4"
+            muted
+            playsInline
+            preload="auto"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
       {/* Watermark */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 watermark whitespace-nowrap">
         מעטפת
@@ -21,7 +70,6 @@ export default function Hero() {
       {/* Decorative blurs */}
       <div className="absolute top-20 right-[10%] w-[300px] md:w-[400px] h-[300px] md:h-[400px] rounded-full bg-blue-400/10 blur-[100px] md:blur-[120px] pointer-events-none" />
       <div className="absolute bottom-20 left-[10%] w-[200px] md:w-[300px] h-[200px] md:h-[300px] rounded-full bg-violet-400/8 blur-[80px] md:blur-[100px] pointer-events-none" />
-      <DocumentStorm onSettled={handleStormSettled} />
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center">
         {/* Badge */}
