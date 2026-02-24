@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { Menu, X } from "lucide-react";
 import { NAV_LINKS, APP_URL } from "@/lib/constants";
 
+const v = process.env.NEXT_PUBLIC_BUILD_ID || "";
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -35,7 +37,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <a href="#">
-          <img src="/logo.png" alt="מעטפת" className="h-12 sm:h-14 w-auto" />
+          <img src={`/logo.png?v=${v}`} alt="מעטפת" className="h-12 sm:h-14 w-auto" />
         </a>
 
         {/* Links — desktop */}

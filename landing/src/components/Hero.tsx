@@ -4,6 +4,8 @@ import { motion } from "motion/react";
 import { ArrowLeft, Play } from "lucide-react";
 import { APP_URL } from "@/lib/constants";
 
+const v = process.env.NEXT_PUBLIC_BUILD_ID || "";
+
 export default function Hero() {
   const [isHeroReady, setIsHeroReady] = useState(false);
   const [showText, setShowText] = useState(false);
@@ -63,7 +65,7 @@ export default function Hero() {
         >
           <video
             ref={videoRef}
-            src="/hero-video.mp4"
+            src={`/hero-video.mp4?v=${v}`}
             muted
             playsInline
             preload="auto"
@@ -103,7 +105,7 @@ export default function Hero() {
 
             {/* Logo pops up — large */}
             <motion.img
-              src="/logo-transparent.png"
+              src={`/logo-transparent.png?v=${v}`}
               alt="מעטפת"
               className="h-32 sm:h-40 md:h-56 lg:h-64 w-auto"
               initial={{ opacity: 0, scale: 0.5, y: 30 }}

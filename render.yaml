@@ -18,21 +18,11 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: out
     headers:
-      # HTML pages — always revalidate
-      - path: /**/*.html
-        name: Cache-Control
-        value: public, no-cache, must-revalidate
-      - path: /
-        name: Cache-Control
-        value: public, no-cache, must-revalidate
       # Next.js hashed assets — cache forever (filename changes on rebuild)
       - path: /_next/static/**
         name: Cache-Control
         value: public, max-age=31536000, immutable
-      # Static media (video, images) — short cache + revalidate
-      - path: /**/*.mp4
+      # Everything else — never cache (assets use ?v= query bust)
+      - path: /*
         name: Cache-Control
-        value: public, max-age=60, must-revalidate
-      - path: /**/*.png
-        name: Cache-Control
-        value: public, max-age=60, must-revalidate
+        value: public, no-cache, must-revalidate
