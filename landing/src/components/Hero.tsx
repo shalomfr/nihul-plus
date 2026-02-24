@@ -128,7 +128,7 @@ export default function Hero() {
             ))}
           </div>
 
-          {/* Video — multiply blend makes white transparent, documents show */}
+          {/* Video — radial mask: documents visible in center, office peeks at edges */}
           <video
             ref={videoRef}
             src={`/hero-video.mp4?v=${v}`}
@@ -136,7 +136,12 @@ export default function Hero() {
             playsInline
             preload="auto"
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ mixBlendMode: "multiply" }}
+            style={{
+              WebkitMaskImage:
+                "radial-gradient(ellipse 70% 65% at 50% 45%, black 50%, transparent 85%)",
+              maskImage:
+                "radial-gradient(ellipse 70% 65% at 50% 45%, black 50%, transparent 85%)",
+            }}
           />
 
           {/* Falling letters + logo + CTA */}
