@@ -134,38 +134,6 @@ export default function Hero() {
               />
             ))}
 
-            {/* Bright streaks between rays — sharp thin lines */}
-            {[
-              { rot: 30, d: 0.3 },
-              { rot: 52, d: 1.2 },
-              { rot: 75, d: 2.5 },
-            ].map((s, i) => (
-              <motion.div
-                key={`ss-${i}`}
-                className="absolute"
-                style={{
-                  top: "-5%",
-                  left: "-5%",
-                  width: "150%",
-                  height: 3,
-                  transformOrigin: "0% 0%",
-                  rotate: s.rot,
-                  background:
-                    "linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,250,220,0.6) 30%, rgba(255,255,255,0.2) 60%, transparent 100%)",
-                  filter: "blur(1px)",
-                }}
-                animate={{
-                  opacity: [0, 0.8, 0.3, 0.7, 0],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: s.d,
-                }}
-              />
-            ))}
-
             {/* Warm haze / atmosphere where rays hit surfaces */}
             <motion.div
               className="absolute"
