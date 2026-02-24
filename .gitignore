@@ -47,3 +47,21 @@ app/prisma/*.db-journal
 
 # Testing
 coverage/
+
+# Azure
+.azure/
+
+# Media & assets (not part of source code)
+/*.pdf
+/*.jpg
+/*.jpeg
+/*.png
+/*.mp4
+app/*.pdf
+app/*.mp4
+app/*.jpg
+app/*.jpeg
+app/*.png
+
+# External API specs
+app/BOI_*.yaml

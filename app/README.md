@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Matefet App — Main Application
+
+Full-stack Next.js application for NGO compliance management.
+
+## Stack
+
+- **Next.js 16** (App Router) + **React 19**
+- **Prisma** ORM + PostgreSQL
+- **NextAuth.js** (credentials provider)
+- **Tailwind CSS v4** (RTL Hebrew)
+- **Zod** validation with Hebrew error messages
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env   # configure your env vars
+npx prisma db push     # create database tables
+npx prisma db seed     # seed admin + demo org
+npm run dev             # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Default Credentials (after seed)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | `admin@matefet.co.il` | `Admin123!` |
+| Manager | `yossi@or-letzion.org.il` | `Manager123!` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Key Directories
 
-## Learn More
+| Path | Description |
+|------|-------------|
+| `src/app/(auth)/` | Login & registration pages |
+| `src/app/admin/` | Admin dashboard |
+| `src/app/portal/` | Organization portal |
+| `src/app/api/` | REST API routes (24+ endpoints) |
+| `src/lib/` | Shared utilities & services |
+| `src/components/` | Reusable React components |
+| `prisma/schema.prisma` | Database schema |
+| `prisma/seed.ts` | Database seeding script |
 
-To learn more about Next.js, take a look at the following resources:
+## API Middleware
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+All API routes use helpers from `src/lib/api-helpers.ts`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `withErrorHandler` — wraps route with try/catch + logging
+- `requireAdmin` — ensures ADMIN role
+- `requireManager` — ensures MANAGER+ role
+- `apiResponse` / `apiError` — consistent response format
