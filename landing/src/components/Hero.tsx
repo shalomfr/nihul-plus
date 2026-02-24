@@ -79,7 +79,7 @@ export default function Hero() {
           />
 
           {/* Falling letters + logo + CTA */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 -translate-y-[15%]">
             <h2
               className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-[#1e293b] text-center"
               style={{ fontFamily: "'Secular One', sans-serif" }}
