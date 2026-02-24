@@ -78,51 +78,137 @@ export default function Hero() {
                 "linear-gradient(135deg, rgba(255,251,235,0.4), rgba(255,255,255,0.3), rgba(255,247,237,0.2))",
             }}
           />
-          {/* Sun rays on the office bg */}
+          {/* Cinematic sun lighting */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {/* Sun glow */}
+            {/* Bright sun source — pulsing bloom */}
             <motion.div
               className="absolute"
               style={{
-                top: "8%",
-                left: "-8%",
-                width: 400,
-                height: 400,
+                top: "-2%",
+                left: "-5%",
+                width: 500,
+                height: 500,
                 borderRadius: "50%",
                 background:
-                  "radial-gradient(circle, rgba(255,236,153,0.6) 0%, rgba(255,220,100,0.25) 40%, transparent 70%)",
+                  "radial-gradient(circle, rgba(255,245,180,0.9) 0%, rgba(255,220,100,0.5) 25%, rgba(255,200,50,0.15) 50%, transparent 70%)",
               }}
-              animate={{ opacity: [0.5, 0.9, 0.5], scale: [1, 1.12, 1] }}
-              transition={{ duration: 8, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+              animate={{
+                opacity: [0.6, 1, 0.7, 1, 0.6],
+                scale: [1, 1.2, 1.05, 1.15, 1],
+              }}
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
             />
-            {/* Light rays */}
+
+            {/* Lens flare streak — horizontal */}
+            <motion.div
+              className="absolute"
+              style={{
+                top: "12%",
+                left: "-10%",
+                width: "80%",
+                height: 3,
+                background:
+                  "linear-gradient(90deg, transparent 0%, rgba(255,240,200,0.8) 30%, rgba(255,255,255,0.9) 50%, rgba(255,240,200,0.8) 70%, transparent 100%)",
+                filter: "blur(2px)",
+              }}
+              animate={{
+                opacity: [0, 0.6, 0.9, 0.6, 0],
+                scaleX: [0.5, 1, 1.2, 1, 0.5],
+              }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            />
+
+            {/* Sweeping god rays that slowly rotate */}
             {[
-              { rotate: -10, h: 70, dur: 9 },
-              { rotate: 10, h: 90, dur: 11 },
-              { rotate: 30, h: 60, dur: 8 },
-              { rotate: 50, h: 80, dur: 10 },
+              { from: -20, to: -5, h: 120, dur: 14, delay: 0 },
+              { from: 0, to: 18, h: 150, dur: 18, delay: 1 },
+              { from: 15, to: 35, h: 100, dur: 16, delay: 0.5 },
+              { from: 30, to: 50, h: 130, dur: 20, delay: 2 },
+              { from: 45, to: 62, h: 90, dur: 15, delay: 1.5 },
+              { from: 55, to: 75, h: 110, dur: 17, delay: 0.8 },
+              { from: 68, to: 82, h: 80, dur: 19, delay: 2.5 },
             ].map((ray, i) => (
               <motion.div
-                key={`hero-ray-${i}`}
+                key={`hray-${i}`}
                 className="absolute"
                 style={{
-                  top: "15%",
+                  top: "8%",
                   left: 0,
-                  width: "130%",
+                  width: "140%",
                   height: ray.h,
                   transformOrigin: "0% 50%",
-                  transform: `rotate(${ray.rotate}deg)`,
                   background:
-                    "linear-gradient(90deg, rgba(255,225,120,0.4) 0%, rgba(255,240,180,0.15) 30%, transparent 80%)",
-                  filter: "blur(12px)",
+                    "linear-gradient(90deg, rgba(255,225,120,0.6) 0%, rgba(255,240,180,0.25) 25%, rgba(255,250,220,0.08) 55%, transparent 85%)",
+                  filter: "blur(15px)",
                 }}
-                animate={{ opacity: [0.1, 0.35, 0.15, 0.35, 0.1] }}
+                animate={{
+                  rotate: [ray.from, ray.to, ray.from],
+                  opacity: [0.15, 0.55, 0.3, 0.55, 0.15],
+                }}
                 transition={{
                   duration: ray.dur,
                   repeat: Infinity,
-                  repeatType: "mirror",
                   ease: "easeInOut",
-                  delay: i * 0.6,
+                  delay: ray.delay,
+                }}
+              />
+            ))}
+
+            {/* Moving light patch on the floor */}
+            <motion.div
+              className="absolute"
+              style={{
+                bottom: "0%",
+                width: "50%",
+                height: 250,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(ellipse, rgba(255,235,160,0.4) 0%, transparent 70%)",
+                filter: "blur(40px)",
+              }}
+              animate={{
+                left: ["15%", "35%", "20%", "40%", "15%"],
+                opacity: [0.3, 0.6, 0.4, 0.7, 0.3],
+                scaleX: [1, 1.1, 0.95, 1.15, 1],
+              }}
+              transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            {/* Floating dust particles — cinematic */}
+            {[
+              { x: "12%", y: "20%", s: 5, dur: 16, d: 0 },
+              { x: "25%", y: "35%", s: 4, dur: 20, d: 2 },
+              { x: "8%",  y: "55%", s: 6, dur: 14, d: 1 },
+              { x: "40%", y: "15%", s: 3, dur: 22, d: 3 },
+              { x: "18%", y: "65%", s: 5, dur: 15, d: 0.5 },
+              { x: "35%", y: "45%", s: 4, dur: 18, d: 2.5 },
+              { x: "50%", y: "30%", s: 3, dur: 19, d: 4 },
+              { x: "28%", y: "75%", s: 4, dur: 17, d: 1.5 },
+              { x: "45%", y: "55%", s: 3, dur: 21, d: 3.5 },
+              { x: "15%", y: "40%", s: 5, dur: 16, d: 0.8 },
+            ].map((p, i) => (
+              <motion.div
+                key={`hdust-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  left: p.x,
+                  top: p.y,
+                  width: p.s,
+                  height: p.s,
+                  background: "rgba(255,248,220,0.95)",
+                  boxShadow: "0 0 8px 2px rgba(255,235,160,0.5)",
+                }}
+                animate={{
+                  y: [0, -40, 15, -30, 5, -20, 0],
+                  x: [0, 20, -12, 8, -5, 15, 0],
+                  opacity: [0, 0.9, 0.4, 1, 0.3, 0.8, 0],
+                  scale: [0.3, 1, 0.7, 1.2, 0.5, 1, 0.3],
+                }}
+                transition={{
+                  duration: p.dur,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: p.d,
                 }}
               />
             ))}
