@@ -76,6 +76,130 @@ export default function Hero() {
             className="absolute inset-0 w-full h-full object-cover blur-[2px]"
           />
 
+          {/* Warm light wash over video — hides compression */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(160deg, rgba(255,240,200,0.18) 0%, transparent 40%, rgba(255,230,180,0.1) 70%, transparent 100%)",
+            }}
+          />
+
+          {/* Animated lighting effects */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Soft pulsing glow — top-left */}
+            <motion.div
+              className="absolute"
+              style={{
+                top: "-8%",
+                left: "-8%",
+                width: 450,
+                height: 450,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(255,245,200,0.5) 0%, rgba(255,230,160,0.2) 40%, transparent 70%)",
+                filter: "blur(30px)",
+              }}
+              animate={{
+                opacity: [0.4, 0.8, 0.5, 0.75, 0.4],
+                scale: [1, 1.15, 1.05, 1.2, 1],
+              }}
+              transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            {/* Drifting warm highlight — center-right */}
+            <motion.div
+              className="absolute"
+              style={{
+                top: "20%",
+                right: "-5%",
+                width: 350,
+                height: 350,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(255,235,180,0.35) 0%, transparent 65%)",
+                filter: "blur(40px)",
+              }}
+              animate={{
+                x: [0, -60, 20, -40, 0],
+                y: [0, 30, -20, 15, 0],
+                opacity: [0.3, 0.6, 0.35, 0.55, 0.3],
+              }}
+              transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            {/* Sweeping light beam — diagonal */}
+            <motion.div
+              className="absolute"
+              style={{
+                top: 0,
+                left: "-20%",
+                width: "140%",
+                height: "100%",
+                background:
+                  "linear-gradient(135deg, transparent 30%, rgba(255,250,230,0.15) 45%, rgba(255,245,210,0.25) 50%, rgba(255,250,230,0.15) 55%, transparent 70%)",
+              }}
+              animate={{
+                x: ["-30%", "30%", "-30%"],
+              }}
+              transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            {/* Soft bottom glow */}
+            <motion.div
+              className="absolute"
+              style={{
+                bottom: "-5%",
+                left: "10%",
+                width: "80%",
+                height: 300,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(ellipse, rgba(255,240,200,0.25) 0%, transparent 70%)",
+                filter: "blur(50px)",
+              }}
+              animate={{
+                opacity: [0.2, 0.45, 0.25, 0.4, 0.2],
+                scaleX: [1, 1.1, 0.95, 1.08, 1],
+              }}
+              transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+            />
+
+            {/* Floating light particles */}
+            {[
+              { x: "15%", y: "25%", s: 4, dur: 18, d: 0 },
+              { x: "70%", y: "35%", s: 3, dur: 22, d: 2 },
+              { x: "30%", y: "60%", s: 5, dur: 15, d: 1 },
+              { x: "80%", y: "20%", s: 3, dur: 20, d: 3 },
+              { x: "50%", y: "70%", s: 4, dur: 17, d: 1.5 },
+              { x: "20%", y: "45%", s: 3, dur: 19, d: 4 },
+            ].map((p, i) => (
+              <motion.div
+                key={`lp-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  left: p.x,
+                  top: p.y,
+                  width: p.s,
+                  height: p.s,
+                  background: "rgba(255,248,220,0.8)",
+                  boxShadow: "0 0 12px 3px rgba(255,240,180,0.4)",
+                }}
+                animate={{
+                  y: [0, -30, 10, -20, 0],
+                  x: [0, 15, -10, 8, 0],
+                  opacity: [0, 0.7, 0.3, 0.8, 0],
+                }}
+                transition={{
+                  duration: p.dur,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: p.d,
+                }}
+              />
+            ))}
+          </div>
+
           {/* Falling letters + logo + CTA */}
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 -translate-y-[15%]">
             {/* White glow backdrop behind text & logo */}
