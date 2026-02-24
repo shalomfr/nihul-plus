@@ -78,8 +78,16 @@ export default function Hero() {
 
           {/* Falling letters + logo + CTA */}
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 -translate-y-[15%]">
+            {/* White glow backdrop behind text & logo */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse 60% 50% at 50% 42%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 40%, transparent 70%)",
+              }}
+            />
             <h2
-              className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-[#1e293b] text-center"
+              className="relative text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-[#1e293b] text-center drop-shadow-[0_0_30px_rgba(255,255,255,0.9)]"
               style={{ fontFamily: "'Secular One', sans-serif" }}
             >
               {"מבול של מסמכים?".split("").map((char, i) => {
@@ -111,7 +119,7 @@ export default function Hero() {
             <motion.img
               src={`/logo-transparent.png?v=${v}`}
               alt="מעטפת"
-              className="h-32 sm:h-40 md:h-56 lg:h-64 w-auto"
+              className="relative h-32 sm:h-40 md:h-56 lg:h-64 w-auto drop-shadow-[0_0_40px_rgba(255,255,255,1)]"
               initial={{ opacity: 0, scale: 0.5, y: 30 }}
               animate={showText ? { opacity: 1, scale: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
