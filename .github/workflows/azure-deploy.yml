@@ -76,8 +76,18 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Stop Azure Web App
+        run: |
+          az webapp stop --name matefet-app --resource-group DefaultResourceGroup-CCAN
+          sleep 10
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'matefet-app'
           package: app-package
+
+      - name: Start Azure Web App
+        if: always()
+        run: |
+          az webapp start --name matefet-app --resource-group DefaultResourceGroup-CCAN
