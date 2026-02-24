@@ -127,3 +127,69 @@ body {
   z-index: 1;
   pointer-events: none;
 }
+
+/* ── Desktop background lighting animations ── */
+@keyframes lightDrift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.25; }
+  33% { transform: translate(60px, -40px) scale(1.1); opacity: 0.35; }
+  66% { transform: translate(-30px, 30px) scale(0.95); opacity: 0.2; }
+}
+
+@keyframes lightDrift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; }
+  50% { transform: translate(-50px, 50px) scale(1.15); opacity: 0.3; }
+}
+
+@keyframes lightDrift3 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.15; }
+  40% { transform: translate(40px, 20px) scale(1.08); opacity: 0.28; }
+  70% { transform: translate(-20px, -30px) scale(0.92); opacity: 0.18; }
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.06; }
+}
+
+.desktop-light-1 {
+  animation: lightDrift1 12s ease-in-out infinite;
+}
+
+.desktop-light-2 {
+  animation: lightDrift2 16s ease-in-out infinite;
+  animation-delay: -4s;
+}
+
+.desktop-light-3 {
+  animation: lightDrift3 14s ease-in-out infinite;
+  animation-delay: -8s;
+}
+
+.desktop-shimmer {
+  animation: shimmer 8s ease-in-out infinite;
+}
+
+/* ── macOS icon squircle ── */
+.mac-icon {
+  border-radius: 22%;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.mac-icon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.1) 40%,
+    transparent 60%
+  );
+  pointer-events: none;
+}

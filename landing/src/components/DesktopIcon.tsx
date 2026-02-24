@@ -4,40 +4,48 @@ import { motion } from "motion/react";
 type Props = {
   letter: string;
   title: string;
+  icon: React.ReactNode;
+  gradient: string;
   onClick: () => void;
   isOpen: boolean;
 };
 
-export default function DesktopIcon({ letter, title, onClick, isOpen }: Props) {
+export default function DesktopIcon({
+  letter,
+  title,
+  icon,
+  gradient,
+  onClick,
+  isOpen,
+}: Props) {
   return (
     <motion.button
       onClick={onClick}
-      className="flex flex-col items-center gap-2 group cursor-pointer w-[100px]"
-      whileHover={{ scale: 1.08 }}
+      className="flex flex-col items-center gap-2.5 group cursor-pointer w-[110px]"
+      whileHover={{ scale: 1.08, y: -4 }}
       whileTap={{ scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
-      {/* Icon square */}
-      <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-[#2563eb] to-[#1e40af] shadow-lg shadow-blue-500/20 flex items-center justify-center transition-shadow duration-200 group-hover:shadow-xl group-hover:shadow-blue-500/30">
-        <span
-          className="text-3xl font-bold text-white"
-          style={{ fontFamily: "'Secular One', sans-serif" }}
-        >
-          {letter}
-        </span>
+      {/* macOS-style icon */}
+      <div
+        className={`mac-icon w-[76px] h-[76px] ${gradient} flex items-center justify-center`}
+      >
+        <div className="relative z-10 flex flex-col items-center gap-0.5">
+          {icon}
+        </div>
       </div>
 
       {/* Title */}
-      <span className="text-[11px] leading-tight text-center text-[#1e293b] font-medium max-w-full line-clamp-2">
+      <span className="text-[11px] leading-tight text-center text-white/90 font-medium max-w-full line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
         {title}
       </span>
 
       {/* Open indicator dot */}
       {isOpen && (
         <motion.div
-          className="w-1 h-1 rounded-full bg-[#2563eb]"
+          className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.8)]"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          layoutId={`dot-${letter}`}
         />
       )}
     </motion.button>
