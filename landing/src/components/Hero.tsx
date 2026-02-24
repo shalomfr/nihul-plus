@@ -6,6 +6,7 @@ import { APP_URL } from "@/lib/constants";
 
 export default function Hero() {
   const [isHeroReady, setIsHeroReady] = useState(false);
+  const [showText, setShowText] = useState(false);
   const [videoFading, setVideoFading] = useState(false);
   const [videoHidden, setVideoHidden] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -16,15 +17,13 @@ export default function Hero() {
 
     const handleCanPlay = () => {
       video.play().catch(() => {
-        // Autoplay blocked — fade out immediately
-        setVideoFading(true);
-        setIsHeroReady(true);
+        // Autoplay blocked — skip to text then fade
+        setShowText(true);
       });
     };
 
     const handleEnded = () => {
-      setVideoFading(true);
-      setIsHeroReady(true);
+      setShowText(true);
     };
 
     video.addEventListener("canplaythrough", handleCanPlay);
@@ -36,7 +35,17 @@ export default function Hero() {
     };
   }, []);
 
-  /* Once fading starts, remove video from DOM after transition */
+  /* Show text for 2s, then fade overlay out */
+  useEffect(() => {
+    if (!showText) return;
+    const timer = setTimeout(() => {
+      setVideoFading(true);
+      setIsHeroReady(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [showText]);
+
+  /* Once fading done, remove overlay from DOM */
   useEffect(() => {
     if (!videoFading) return;
     const timer = setTimeout(() => setVideoHidden(true), 2000);
@@ -48,7 +57,7 @@ export default function Hero() {
       {/* ── Full-screen video overlay – blocks entire page ── */}
       {!videoHidden && (
         <div
-          className="fixed inset-0 z-[9999] bg-white flex items-center justify-center transition-opacity duration-[2000ms] ease-in-out"
+          className="fixed inset-0 z-[9999] bg-white transition-opacity duration-[2000ms] ease-in-out"
           style={{ opacity: videoFading ? 0 : 1 }}
         >
           <video
@@ -59,6 +68,19 @@ export default function Hero() {
             preload="auto"
             className="w-full h-full object-cover mix-blend-multiply"
           />
+
+          {/* Text after video ends */}
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-700 ease-in-out"
+            style={{ opacity: showText ? 1 : 0 }}
+          >
+            <h2 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-[#1e293b] mb-4 text-center">
+              מבול של מסמכים?
+            </h2>
+            <p className="text-xl sm:text-2xl md:text-3xl font-semibold gradient-text">
+              פנו אלינו
+            </p>
+          </div>
         </div>
       )}
 
