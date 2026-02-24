@@ -233,75 +233,93 @@ export default function ServicesContent() {
           />
         </div>
 
-        {/* Warm animated lighting effects (Framer Motion) */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Golden sunlight from window */}
+        {/* Sun rays from the window */}
+        <div
+          className="absolute pointer-events-none overflow-hidden"
+          style={{ top: 0, left: 0, width: "100%", height: "100%" }}
+        >
+          {/* Ray origin glow */}
           <motion.div
-            className="absolute rounded-full"
+            className="absolute"
             style={{
-              top: "5%",
-              left: "10%",
-              width: 600,
-              height: 600,
-              background: "radial-gradient(circle, rgba(252,211,77,0.35) 0%, transparent 70%)",
-              filter: "blur(80px)",
+              top: "-5%",
+              left: "-5%",
+              width: 300,
+              height: 300,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(255,230,130,0.6) 0%, transparent 70%)",
+              filter: "blur(30px)",
             }}
-            animate={{
-              x: [0, 50, -25, 0],
-              y: [0, -30, 25, 0],
-              scale: [1, 1.12, 0.95, 1],
-              opacity: [0.5, 0.7, 0.4, 0.5],
-            }}
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+            animate={{ opacity: [0.5, 0.8, 0.5], scale: [1, 1.1, 1] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           />
-          {/* Warm glow center */}
-          <motion.div
-            className="absolute rounded-full"
-            style={{
-              top: "30%",
-              right: "20%",
-              width: 500,
-              height: 500,
-              background: "radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)",
-              filter: "blur(70px)",
-            }}
-            animate={{
-              x: [0, -40, 20, 0],
-              y: [0, 40, -20, 0],
-              scale: [1, 1.1, 0.96, 1],
-              opacity: [0.4, 0.6, 0.35, 0.4],
-            }}
-            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-          />
-          {/* Soft warm highlight bottom */}
-          <motion.div
-            className="absolute rounded-full"
-            style={{
-              bottom: "10%",
-              left: "30%",
-              width: 450,
-              height: 450,
-              background: "radial-gradient(circle, rgba(253,224,71,0.25) 0%, transparent 70%)",
-              filter: "blur(60px)",
-            }}
-            animate={{
-              x: [0, 35, -15, 0],
-              y: [0, 15, -25, 0],
-              scale: [1, 1.06, 0.94, 1],
-              opacity: [0.35, 0.55, 0.3, 0.35],
-            }}
-            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-          />
-          {/* Warm shimmer sweep */}
-          <motion.div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(135deg, transparent 30%, rgba(255,251,235,0.15) 50%, transparent 70%)",
-            }}
-            animate={{ x: ["-100%", "100%"] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", repeatDelay: 4 }}
-          />
+
+          {/* Sun rays — diagonal beams from top-left */}
+          {[
+            { rotate: 25, width: "140%", delay: 0, dur: 8 },
+            { rotate: 35, width: "130%", delay: 1.5, dur: 10 },
+            { rotate: 48, width: "150%", delay: 0.5, dur: 9 },
+            { rotate: 60, width: "120%", delay: 2, dur: 11 },
+            { rotate: 72, width: "110%", delay: 1, dur: 7 },
+          ].map((ray, i) => (
+            <motion.div
+              key={i}
+              className="absolute"
+              style={{
+                top: 0,
+                left: 0,
+                width: ray.width,
+                height: 60 + i * 12,
+                transformOrigin: "0% 0%",
+                transform: `rotate(${ray.rotate}deg)`,
+                background: `linear-gradient(90deg, rgba(255,223,100,0.35) 0%, rgba(255,240,180,0.15) 40%, transparent 85%)`,
+                filter: "blur(8px)",
+              }}
+              animate={{
+                opacity: [0.15, 0.5, 0.25, 0.5, 0.15],
+              }}
+              transition={{
+                duration: ray.dur,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: ray.delay,
+              }}
+            />
+          ))}
+
+          {/* Floating dust particles in the light */}
+          {[
+            { x: "20%", y: "30%", size: 4, dur: 12, delay: 0 },
+            { x: "35%", y: "45%", size: 3, dur: 15, delay: 2 },
+            { x: "15%", y: "55%", size: 5, dur: 10, delay: 1 },
+            { x: "45%", y: "25%", size: 3, dur: 14, delay: 3 },
+            { x: "30%", y: "60%", size: 4, dur: 11, delay: 0.5 },
+            { x: "50%", y: "40%", size: 3, dur: 13, delay: 2.5 },
+          ].map((p, i) => (
+            <motion.div
+              key={`dust-${i}`}
+              className="absolute rounded-full"
+              style={{
+                left: p.x,
+                top: p.y,
+                width: p.size,
+                height: p.size,
+                background: "rgba(255,240,200,0.8)",
+                filter: "blur(1px)",
+              }}
+              animate={{
+                y: [0, -30, 10, -20, 0],
+                x: [0, 15, -10, 5, 0],
+                opacity: [0, 0.7, 0.3, 0.8, 0],
+              }}
+              transition={{
+                duration: p.dur,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: p.delay,
+              }}
+            />
+          ))}
         </div>
 
         {/* BSH */}
