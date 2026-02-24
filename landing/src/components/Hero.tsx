@@ -57,7 +57,7 @@ export default function Hero() {
             muted
             playsInline
             preload="auto"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover mix-blend-multiply"
           />
         </div>
       )}
