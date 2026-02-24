@@ -28,7 +28,7 @@ export const POST = withErrorHandler(async (_req: Request, { params }: { params:
     });
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : "שגיאה בסנכרון";
-    return apiError(errorMsg, 500);
+    return apiError(errorMsg, 400);
   }
 });
 

@@ -2,6 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, Bell, User, LogOut } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+import { usePathname } from "next/navigation";
+import BackButton from "@/components/BackButton";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 interface Notification {
   id: string;
@@ -23,6 +26,10 @@ function getHebrewDate() {
 export default function Topbar({ title, subtitle }: { title: string; subtitle?: string }) {
   const { dayOfWeek, formatted } = getHebrewDate();
   const { data: session } = useSession();
+  const pathname = usePathname();
+
+  // Show back button on all pages except portal home
+  const showBackButton = pathname !== "/portal";
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -113,13 +120,20 @@ export default function Topbar({ title, subtitle }: { title: string; subtitle?: 
   const userInitials = userName.slice(0, 2);
 
   return (
-    <header className="flex items-start justify-between mb-6 md:mb-8 gap-4">
-      <div className="min-w-0">
-        <h2 className="text-[22px] md:text-[28px] font-bold text-[#1e293b] leading-tight truncate">{title}</h2>
-        {subtitle && <p className="text-[12px] md:text-[13px] text-[#64748b] mt-1 truncate">{subtitle}</p>}
-      </div>
+    <header className="mb-6 md:mb-8">
+      {/* Breadcrumbs */}
+      <Breadcrumbs />
 
-      <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            {showBackButton && <BackButton className="flex-shrink-0" />}
+            <h2 className="text-[22px] md:text-[28px] font-bold text-[#1e293b] leading-tight truncate">{title}</h2>
+          </div>
+          {subtitle && <p className="text-[12px] md:text-[13px] text-[#64748b] mt-1 truncate">{subtitle}</p>}
+        </div>
+
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
         <div className="hidden lg:block text-left text-[12px] text-[#64748b] leading-relaxed ml-3">
           <div className="text-[13px] text-[#1e293b]">יום {dayOfWeek}</div>
           <div>{formatted}</div>
@@ -247,6 +261,7 @@ export default function Topbar({ title, subtitle }: { title: string; subtitle?: 
               </button>
             </div>
           )}
+        </div>
         </div>
       </div>
     </header>
