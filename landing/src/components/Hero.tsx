@@ -83,11 +83,11 @@ export default function Hero() {
               className="absolute inset-0 pointer-events-none"
               style={{
                 background:
-                  "radial-gradient(ellipse 60% 50% at 50% 42%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 40%, transparent 70%)",
+                  "radial-gradient(ellipse 65% 55% at 50% 42%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 35%, rgba(255,255,255,0.3) 55%, transparent 75%)",
               }}
             />
             <h2
-              className="relative text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-[#1e293b] text-center drop-shadow-[0_0_30px_rgba(255,255,255,0.9)]"
+              className="relative text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-[#1e293b] text-center drop-shadow-[0_0_50px_rgba(255,255,255,1)] [text-shadow:0_0_40px_white,0_0_80px_rgba(255,255,255,0.6)]"
               style={{ fontFamily: "'Secular One', sans-serif" }}
             >
               {"מבול של מסמכים?".split("").map((char, i) => {
@@ -119,7 +119,7 @@ export default function Hero() {
             <motion.img
               src={`/logo-transparent.png?v=${v}`}
               alt="מעטפת"
-              className="relative h-32 sm:h-40 md:h-56 lg:h-64 w-auto drop-shadow-[0_0_40px_rgba(255,255,255,1)]"
+              className="relative h-32 sm:h-40 md:h-56 lg:h-64 w-auto drop-shadow-[0_0_60px_rgba(255,255,255,1)] [filter:drop-shadow(0_0_30px_white)_drop-shadow(0_0_60px_rgba(255,255,255,0.8))]"
               initial={{ opacity: 0, scale: 0.5, y: 30 }}
               animate={showText ? { opacity: 1, scale: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
