@@ -60,16 +60,33 @@ export default function Hero() {
       {/* ── Full-screen video overlay – blocks entire page ── */}
       {!videoHidden && (
         <div
-          className="fixed inset-0 z-[9999] bg-white transition-opacity duration-[2000ms] ease-in-out"
+          className="fixed inset-0 z-[9999] transition-opacity duration-[2000ms] ease-in-out"
           style={{ opacity: videoFading ? 0 : 1 }}
         >
+          {/* Office background behind video */}
+          <img
+            src={`/office-bg.jpg?v=${v}`}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: "brightness(1.15) blur(3px)" }}
+          />
+          {/* Warm overlay on office bg */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(255,251,235,0.4), rgba(255,255,255,0.3), rgba(255,247,237,0.2))",
+            }}
+          />
+          {/* Video — multiply blend makes white transparent, documents show */}
           <video
             ref={videoRef}
             src={`/hero-video.mp4?v=${v}`}
             muted
             playsInline
             preload="auto"
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ mixBlendMode: "multiply" }}
           />
 
           {/* Falling letters + logo + CTA */}
