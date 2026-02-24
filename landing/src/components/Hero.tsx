@@ -44,15 +44,7 @@ export default function Hero() {
     };
   }, []);
 
-  /* Show text for 4s (letters ~1.4s + logo/btn ~0.8s + pause), then fade */
-  useEffect(() => {
-    if (!showText) return;
-    const timer = setTimeout(() => {
-      setVideoFading(true);
-      setIsHeroReady(true);
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [showText]);
+  /* No auto-fade — overlay stays until user clicks CTA */
 
   /* Once fading done, remove overlay from DOM */
   useEffect(() => {
@@ -119,9 +111,9 @@ export default function Hero() {
               transition={{ duration: 0.5, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
             />
 
-            {/* CTA button */}
+            {/* CTA button — dismisses overlay and reveals landing page */}
             <motion.button
-              className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold px-8 py-3.5 rounded-xl text-lg transition-all shadow-xl shadow-blue-500/25 cursor-pointer"
+              className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold px-10 py-4 rounded-xl text-xl transition-all shadow-xl shadow-blue-500/25 cursor-pointer"
               initial={{ opacity: 0, y: 20 }}
               animate={showText ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 1.3, ease: [0.22, 1, 0.36, 1] }}
