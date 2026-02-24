@@ -15,22 +15,23 @@ export default function Hero() {
     const video = videoRef.current;
     if (!video) return;
 
-    const handleCanPlay = () => {
+    // Start playing as soon as first frame is decoded (don't wait for full buffer)
+    const handleReady = () => {
       video.play().catch(() => {
-        // Autoplay blocked — skip to text then fade
         setShowText(true);
       });
     };
 
-    const handleEnded = () => {
-      setShowText(true);
-    };
+    const handleEnded = () => setShowText(true);
 
-    video.addEventListener("canplaythrough", handleCanPlay);
+    video.addEventListener("loadeddata", handleReady);
     video.addEventListener("ended", handleEnded);
 
+    // If already loaded (cached), play immediately
+    if (video.readyState >= 2) handleReady();
+
     return () => {
-      video.removeEventListener("canplaythrough", handleCanPlay);
+      video.removeEventListener("loadeddata", handleReady);
       video.removeEventListener("ended", handleEnded);
     };
   }, []);
@@ -66,7 +67,7 @@ export default function Hero() {
             muted
             playsInline
             preload="auto"
-            className="w-full h-full object-cover mix-blend-multiply"
+            className="w-full h-full object-cover"
           />
 
           {/* Falling letters text */}
@@ -75,26 +76,29 @@ export default function Hero() {
               className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-[#1e293b] text-center"
               style={{ fontFamily: "'Secular One', sans-serif" }}
             >
-              {"מבול של מסמכים?".split("").map((char, i) => (
-                <motion.span
-                  key={i}
-                  className="inline-block"
-                  initial={{ opacity: 0, y: -80, rotate: Math.random() * 30 - 15 }}
-                  animate={
-                    showText
-                      ? { opacity: 1, y: 0, rotate: 0 }
-                      : { opacity: 0, y: -80 }
-                  }
-                  transition={{
-                    duration: 0.6,
-                    delay: i * 0.06,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  style={{ display: char === " " ? "inline" : undefined }}
-                >
-                  {char === " " ? "\u00A0" : char}
-                </motion.span>
-              ))}
+              {"מבול של מסמכים?".split("").map((char, i) => {
+                const rot = ((i * 7 + 3) % 30) - 15; // deterministic pseudo-random
+                return (
+                  <motion.span
+                    key={i}
+                    className="inline-block"
+                    initial={{ opacity: 0, y: -80, rotate: rot }}
+                    animate={
+                      showText
+                        ? { opacity: 1, y: 0, rotate: 0 }
+                        : { opacity: 0, y: -80 }
+                    }
+                    transition={{
+                      duration: 0.6,
+                      delay: i * 0.06,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    style={{ display: char === " " ? "inline" : undefined }}
+                  >
+                    {char === " " ? "\u00A0" : char}
+                  </motion.span>
+                );
+              })}
             </h2>
           </div>
         </div>
