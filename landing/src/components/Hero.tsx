@@ -15,13 +15,12 @@ export default function Hero() {
     const video = videoRef.current;
     if (!video) return;
 
-    // Start playing as soon as first frame is decoded (don't wait for full buffer)
+    let started = false;
     const handleReady = () => {
-      video.play().catch(() => {
-        setShowText(true);
-      });
+      if (started) return;
+      started = true;
+      video.play().catch(() => setShowText(true));
     };
-
     const handleEnded = () => setShowText(true);
 
     video.addEventListener("loadeddata", handleReady);
@@ -30,9 +29,18 @@ export default function Hero() {
     // If already loaded (cached), play immediately
     if (video.readyState >= 2) handleReady();
 
+    // Fallback: if video doesn't start within 3s, skip to text
+    const timeout = setTimeout(() => {
+      if (!started) {
+        started = true;
+        setShowText(true);
+      }
+    }, 3000);
+
     return () => {
       video.removeEventListener("loadeddata", handleReady);
       video.removeEventListener("ended", handleEnded);
+      clearTimeout(timeout);
     };
   }, []);
 
