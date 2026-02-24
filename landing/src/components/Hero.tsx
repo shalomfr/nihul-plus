@@ -35,13 +35,13 @@ export default function Hero() {
     };
   }, []);
 
-  /* Show text for 2s, then fade overlay out */
+  /* Show text for 2.5s (letters finish ~1.4s + pause), then fade overlay out */
   useEffect(() => {
     if (!showText) return;
     const timer = setTimeout(() => {
       setVideoFading(true);
       setIsHeroReady(true);
-    }, 2000);
+    }, 2500);
     return () => clearTimeout(timer);
   }, [showText]);
 
@@ -69,17 +69,33 @@ export default function Hero() {
             className="w-full h-full object-cover mix-blend-multiply"
           />
 
-          {/* Text after video ends */}
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-700 ease-in-out"
-            style={{ opacity: showText ? 1 : 0 }}
-          >
-            <h2 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-[#1e293b] mb-4 text-center">
-              מבול של מסמכים?
+          {/* Falling letters text */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <h2
+              className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-[#1e293b] text-center"
+              style={{ fontFamily: "'Secular One', sans-serif" }}
+            >
+              {"מבול של מסמכים?".split("").map((char, i) => (
+                <motion.span
+                  key={i}
+                  className="inline-block"
+                  initial={{ opacity: 0, y: -80, rotate: Math.random() * 30 - 15 }}
+                  animate={
+                    showText
+                      ? { opacity: 1, y: 0, rotate: 0 }
+                      : { opacity: 0, y: -80 }
+                  }
+                  transition={{
+                    duration: 0.6,
+                    delay: i * 0.06,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  style={{ display: char === " " ? "inline" : undefined }}
+                >
+                  {char === " " ? "\u00A0" : char}
+                </motion.span>
+              ))}
             </h2>
-            <p className="text-xl sm:text-2xl md:text-3xl font-semibold gradient-text">
-              פנו אלינו
-            </p>
           </div>
         </div>
       )}
