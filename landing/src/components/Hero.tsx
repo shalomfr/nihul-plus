@@ -78,6 +78,56 @@ export default function Hero() {
                 "linear-gradient(135deg, rgba(255,251,235,0.4), rgba(255,255,255,0.3), rgba(255,247,237,0.2))",
             }}
           />
+          {/* Sun rays on the office bg */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Sun glow */}
+            <motion.div
+              className="absolute"
+              style={{
+                top: "8%",
+                left: "-8%",
+                width: 400,
+                height: 400,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(255,236,153,0.6) 0%, rgba(255,220,100,0.25) 40%, transparent 70%)",
+              }}
+              animate={{ opacity: [0.5, 0.9, 0.5], scale: [1, 1.12, 1] }}
+              transition={{ duration: 8, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+            />
+            {/* Light rays */}
+            {[
+              { rotate: -10, h: 70, dur: 9 },
+              { rotate: 10, h: 90, dur: 11 },
+              { rotate: 30, h: 60, dur: 8 },
+              { rotate: 50, h: 80, dur: 10 },
+            ].map((ray, i) => (
+              <motion.div
+                key={`hero-ray-${i}`}
+                className="absolute"
+                style={{
+                  top: "15%",
+                  left: 0,
+                  width: "130%",
+                  height: ray.h,
+                  transformOrigin: "0% 50%",
+                  transform: `rotate(${ray.rotate}deg)`,
+                  background:
+                    "linear-gradient(90deg, rgba(255,225,120,0.4) 0%, rgba(255,240,180,0.15) 30%, transparent 80%)",
+                  filter: "blur(12px)",
+                }}
+                animate={{ opacity: [0.1, 0.35, 0.15, 0.35, 0.1] }}
+                transition={{
+                  duration: ray.dur,
+                  repeat: Infinity,
+                  repeatType: "mirror",
+                  ease: "easeInOut",
+                  delay: i * 0.6,
+                }}
+              />
+            ))}
+          </div>
+
           {/* Video — multiply blend makes white transparent, documents show */}
           <video
             ref={videoRef}

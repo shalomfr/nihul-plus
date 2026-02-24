@@ -251,7 +251,7 @@ export default function ServicesContent() {
               opacity: [0.6, 1, 0.6],
               scale: [1, 1.15, 1],
             }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 8, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
           />
 
           {/* Light rays fanning from the left window */}
@@ -281,6 +281,7 @@ export default function ServicesContent() {
               transition={{
                 duration: ray.dur,
                 repeat: Infinity,
+                repeatType: "mirror",
                 ease: "easeInOut",
                 delay: i * 0.8,
               }}
@@ -301,7 +302,7 @@ export default function ServicesContent() {
               filter: "blur(40px)",
             }}
             animate={{ opacity: [0.3, 0.5, 0.3], scaleX: [1, 1.05, 1] }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 10, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
           />
 
           {/* Floating dust particles in the sunlight */}
@@ -335,6 +336,7 @@ export default function ServicesContent() {
               transition={{
                 duration: p.dur,
                 repeat: Infinity,
+                repeatType: "loop",
                 ease: "easeInOut",
                 delay: p.delay,
               }}
