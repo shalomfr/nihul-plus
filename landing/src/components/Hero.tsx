@@ -44,11 +44,11 @@ export default function Hero() {
   }, [videoFading]);
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-10 overflow-hidden bg-grid">
-      {/* ── Full-cover video ── */}
+    <>
+      {/* ── Full-screen video overlay – blocks entire page ── */}
       {!videoHidden && (
         <div
-          className="absolute inset-0 z-20 transition-opacity duration-[2000ms] ease-in-out"
+          className="fixed inset-0 z-[9999] bg-white flex items-center justify-center transition-opacity duration-[2000ms] ease-in-out"
           style={{ opacity: videoFading ? 0 : 1 }}
         >
           <video
@@ -62,6 +62,7 @@ export default function Hero() {
         </div>
       )}
 
+    <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-10 overflow-hidden bg-grid">
       {/* Watermark */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 watermark whitespace-nowrap">
         מעטפת
@@ -245,5 +246,6 @@ export default function Hero() {
         </div>
       </motion.div>
     </section>
+    </>
   );
 }
