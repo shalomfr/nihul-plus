@@ -76,119 +76,143 @@ export default function Hero() {
             className="absolute inset-0 w-full h-full object-cover blur-[2px]"
           />
 
-          {/* Warm light wash over video — hides compression */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "linear-gradient(160deg, rgba(255,240,200,0.18) 0%, transparent 40%, rgba(255,230,180,0.1) 70%, transparent 100%)",
-            }}
-          />
-
-          {/* Animated lighting effects */}
+          {/* ── Sun rays streaming into room ── */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {/* Soft pulsing glow — top-left */}
+            {/* Bright sun source — top-left corner */}
             <motion.div
               className="absolute"
               style={{
-                top: "-8%",
-                left: "-8%",
-                width: 450,
-                height: 450,
+                top: "-15%",
+                left: "-10%",
+                width: 600,
+                height: 600,
                 borderRadius: "50%",
                 background:
-                  "radial-gradient(circle, rgba(255,245,200,0.5) 0%, rgba(255,230,160,0.2) 40%, transparent 70%)",
-                filter: "blur(30px)",
+                  "radial-gradient(circle, rgba(255,250,200,0.95) 0%, rgba(255,235,150,0.6) 20%, rgba(255,220,100,0.2) 45%, transparent 65%)",
               }}
               animate={{
-                opacity: [0.4, 0.8, 0.5, 0.75, 0.4],
-                scale: [1, 1.15, 1.05, 1.2, 1],
+                opacity: [0.7, 1, 0.8, 1, 0.7],
+                scale: [1, 1.12, 1.04, 1.1, 1],
               }}
-              transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
             />
 
-            {/* Drifting warm highlight — center-right */}
-            <motion.div
-              className="absolute"
-              style={{
-                top: "20%",
-                right: "-5%",
-                width: 350,
-                height: 350,
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(circle, rgba(255,235,180,0.35) 0%, transparent 65%)",
-                filter: "blur(40px)",
-              }}
-              animate={{
-                x: [0, -60, 20, -40, 0],
-                y: [0, 30, -20, 15, 0],
-                opacity: [0.3, 0.6, 0.35, 0.55, 0.3],
-              }}
-              transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-            />
-
-            {/* Sweeping light beam — diagonal */}
-            <motion.div
-              className="absolute"
-              style={{
-                top: 0,
-                left: "-20%",
-                width: "140%",
-                height: "100%",
-                background:
-                  "linear-gradient(135deg, transparent 30%, rgba(255,250,230,0.15) 45%, rgba(255,245,210,0.25) 50%, rgba(255,250,230,0.15) 55%, transparent 70%)",
-              }}
-              animate={{
-                x: ["-30%", "30%", "-30%"],
-              }}
-              transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-            />
-
-            {/* Soft bottom glow */}
-            <motion.div
-              className="absolute"
-              style={{
-                bottom: "-5%",
-                left: "10%",
-                width: "80%",
-                height: 300,
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(ellipse, rgba(255,240,200,0.25) 0%, transparent 70%)",
-                filter: "blur(50px)",
-              }}
-              animate={{
-                opacity: [0.2, 0.45, 0.25, 0.4, 0.2],
-                scaleX: [1, 1.1, 0.95, 1.08, 1],
-              }}
-              transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-            />
-
-            {/* Floating light particles */}
+            {/* Wide sun ray bands — diagonal from top-left to bottom-right */}
             {[
-              { x: "15%", y: "25%", s: 4, dur: 18, d: 0 },
-              { x: "70%", y: "35%", s: 3, dur: 22, d: 2 },
-              { x: "30%", y: "60%", s: 5, dur: 15, d: 1 },
-              { x: "80%", y: "20%", s: 3, dur: 20, d: 3 },
-              { x: "50%", y: "70%", s: 4, dur: 17, d: 1.5 },
-              { x: "20%", y: "45%", s: 3, dur: 19, d: 4 },
+              { rot: 25, w: 180, op: 0.45, dur: 14, d: 0 },
+              { rot: 35, w: 120, op: 0.35, dur: 16, d: 1 },
+              { rot: 48, w: 200, op: 0.5,  dur: 12, d: 0.5 },
+              { rot: 58, w: 100, op: 0.3,  dur: 18, d: 2 },
+              { rot: 70, w: 160, op: 0.4,  dur: 15, d: 1.5 },
+              { rot: 82, w: 130, op: 0.35, dur: 17, d: 0.8 },
+              { rot: 95, w: 90,  op: 0.25, dur: 20, d: 3 },
+            ].map((ray, i) => (
+              <motion.div
+                key={`sr-${i}`}
+                className="absolute"
+                style={{
+                  top: "-10%",
+                  left: "-5%",
+                  width: "160%",
+                  height: ray.w,
+                  transformOrigin: "0% 0%",
+                  rotate: ray.rot,
+                  background:
+                    `linear-gradient(90deg, rgba(255,245,180,${ray.op * 1.2}) 0%, rgba(255,240,170,${ray.op * 0.8}) 20%, rgba(255,250,220,${ray.op * 0.5}) 50%, rgba(255,255,240,${ray.op * 0.2}) 75%, transparent 100%)`,
+                  filter: "blur(20px)",
+                }}
+                animate={{
+                  opacity: [ray.op * 0.6, ray.op, ray.op * 0.7, ray.op * 0.95, ray.op * 0.6],
+                  scaleY: [0.8, 1.1, 0.9, 1.05, 0.8],
+                }}
+                transition={{
+                  duration: ray.dur,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: ray.d,
+                }}
+              />
+            ))}
+
+            {/* Bright streaks between rays — sharp thin lines */}
+            {[
+              { rot: 30, d: 0.3 },
+              { rot: 52, d: 1.2 },
+              { rot: 75, d: 2.5 },
+            ].map((s, i) => (
+              <motion.div
+                key={`ss-${i}`}
+                className="absolute"
+                style={{
+                  top: "-5%",
+                  left: "-5%",
+                  width: "150%",
+                  height: 3,
+                  transformOrigin: "0% 0%",
+                  rotate: s.rot,
+                  background:
+                    "linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,250,220,0.6) 30%, rgba(255,255,255,0.2) 60%, transparent 100%)",
+                  filter: "blur(1px)",
+                }}
+                animate={{
+                  opacity: [0, 0.8, 0.3, 0.7, 0],
+                }}
+                transition={{
+                  duration: 8,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: s.d,
+                }}
+              />
+            ))}
+
+            {/* Warm haze / atmosphere where rays hit surfaces */}
+            <motion.div
+              className="absolute"
+              style={{
+                bottom: "-10%",
+                right: "-5%",
+                width: "70%",
+                height: "50%",
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(ellipse, rgba(255,235,160,0.35) 0%, rgba(255,245,200,0.15) 40%, transparent 70%)",
+                filter: "blur(60px)",
+              }}
+              animate={{
+                opacity: [0.3, 0.6, 0.35, 0.55, 0.3],
+                scale: [1, 1.08, 0.96, 1.05, 1],
+              }}
+              transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            />
+
+            {/* Floating dust particles caught in the sunlight */}
+            {[
+              { x: "20%", y: "30%", s: 4, dur: 16, d: 0 },
+              { x: "35%", y: "45%", s: 3, dur: 20, d: 2 },
+              { x: "50%", y: "25%", s: 5, dur: 14, d: 1 },
+              { x: "65%", y: "55%", s: 3, dur: 22, d: 3 },
+              { x: "25%", y: "60%", s: 4, dur: 17, d: 1.5 },
+              { x: "45%", y: "40%", s: 3, dur: 19, d: 4 },
+              { x: "70%", y: "35%", s: 4, dur: 15, d: 0.5 },
+              { x: "55%", y: "65%", s: 3, dur: 21, d: 2.5 },
             ].map((p, i) => (
               <motion.div
-                key={`lp-${i}`}
+                key={`dp-${i}`}
                 className="absolute rounded-full"
                 style={{
                   left: p.x,
                   top: p.y,
                   width: p.s,
                   height: p.s,
-                  background: "rgba(255,248,220,0.8)",
-                  boxShadow: "0 0 12px 3px rgba(255,240,180,0.4)",
+                  background: "rgba(255,250,230,0.9)",
+                  boxShadow: "0 0 10px 4px rgba(255,240,180,0.5)",
                 }}
                 animate={{
-                  y: [0, -30, 10, -20, 0],
-                  x: [0, 15, -10, 8, 0],
-                  opacity: [0, 0.7, 0.3, 0.8, 0],
+                  y: [0, -25, 8, -18, 0],
+                  x: [0, 12, -8, 6, 0],
+                  opacity: [0, 0.9, 0.4, 1, 0],
+                  scale: [0.5, 1.2, 0.8, 1.1, 0.5],
                 }}
                 transition={{
                   duration: p.dur,
