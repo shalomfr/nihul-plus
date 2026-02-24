@@ -34,9 +34,8 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-2">
-          <img src="/logo.png" alt="מעטפת" className="h-9 sm:h-10 w-auto" />
-          <span className="text-base sm:text-lg font-bold text-[#1e293b]">מעטפת</span>
+        <a href="#">
+          <img src="/logo.png" alt="מעטפת" className="h-12 sm:h-14 w-auto" />
         </a>
 
         {/* Links — desktop */}
