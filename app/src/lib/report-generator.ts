@@ -12,7 +12,7 @@ export async function generateAnnualReportHtml(
   const yearEnd = new Date(year, 11, 31, 23, 59, 59);
 
   // Fetch all data in parallel
-  const [org, donations, expenses, members, volunteers, projects, compliance, transfers] = await Promise.all([
+  const [org, donations, expenses, members, volunteers, compliance, transfers] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: organizationId },
       include: {
@@ -32,9 +32,6 @@ export async function generateAnnualReportHtml(
     prisma.volunteer.findMany({
       where: { organizationId },
     }),
-    prisma.project.findMany({
-      where: { organizationId },
-    }).catch(() => [] as never[]),
     prisma.complianceItem.findMany({ where: { organizationId } }),
     prisma.bankTransfer.findMany({
       where: { organizationId, createdAt: { gte: yearStart, lte: yearEnd } },

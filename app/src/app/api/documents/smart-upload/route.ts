@@ -8,44 +8,26 @@ import { requireManager, apiError } from "@/lib/api-helpers";
 
 const OCR_URL = process.env.OCR_BACKEND_URL ?? "https://hebrew-ocr-backend.onrender.com";
 
-type DocumentCategory =
-  | "CERTIFICATE"
-  | "FINANCIAL_MGMT"
-  | "GOVERNANCE"
-  | "LEGAL"
-  | "HR"
-  | "CORRESPONDENCE"
-  | "OTHER";
+// Map detected content type → DocumentCategory enum values in schema
+type DocumentCategory = "FOUNDING" | "FINANCIAL" | "COMPLIANCE" | "BOARD" | "GENERAL";
 
-function classifyDocument(text: string): { category: DocumentCategory; confidence: number } {
+function classifyDocument(text: string): { category: DocumentCategory; confidence: number; label: string } {
   const lower = text.toLowerCase();
 
-  // Certificate of good standing
   if (/ניהול תקין|אישור ניהול|אישור בתוקף/.test(lower)) {
-    return { category: "CERTIFICATE", confidence: 90 };
+    return { category: "COMPLIANCE", confidence: 90, label: "ניהול תקין / ציות" };
   }
-  // Financial documents
   if (/מאזן|דוח כספי|דוח רווח|תזרים|תקציב|ביקורת חשבונות/.test(lower)) {
-    return { category: "FINANCIAL_MGMT", confidence: 88 };
+    return { category: "FINANCIAL", confidence: 88, label: "ניהול כספי" };
   }
-  // Governance
   if (/פרוטוקול|אסיפה|ועד|החלטה|הצבעה|רשימת חברים/.test(lower)) {
-    return { category: "GOVERNANCE", confidence: 85 };
+    return { category: "BOARD", confidence: 85, label: "ועד ופרוטוקולים" };
   }
-  // Legal
-  if (/תקנון|חוזה|הסכם|ייפוי כוח|תצהיר|בית משפט/.test(lower)) {
-    return { category: "LEGAL", confidence: 85 };
-  }
-  // HR
-  if (/חוזה עבודה|שכר|פיטורין|מכתב אישור|עובד/.test(lower)) {
-    return { category: "HR", confidence: 80 };
-  }
-  // Correspondence
-  if (/לכבוד|בכבוד רב|מכתב|פניה|בקשה/.test(lower)) {
-    return { category: "CORRESPONDENCE", confidence: 70 };
+  if (/תקנון|חוזה|הסכם|ייפוי כוח|תצהיר|רישום עמותה|מייסד/.test(lower)) {
+    return { category: "FOUNDING", confidence: 85, label: "מסמכי יסוד" };
   }
 
-  return { category: "OTHER", confidence: 50 };
+  return { category: "GENERAL", confidence: 50, label: "כללי" };
 }
 
 export async function POST(req: Request) {
@@ -82,21 +64,20 @@ export async function POST(req: Request) {
     console.warn("[smart-upload] OCR failed:", err);
   }
 
-  const { category, confidence } = manualCategory
-    ? { category: manualCategory as DocumentCategory, confidence: 100 }
+  const { category, confidence, label } = manualCategory
+    ? { category: manualCategory as DocumentCategory, confidence: 100, label: manualCategory }
     : classifyDocument(ocrText);
 
-  // Save document to DB
-  const doc = await prisma.document.create({
+  // Save document to DB using OrganizationDocument model
+  const doc = await prisma.organizationDocument.create({
     data: {
       organizationId: user.organizationId!,
-      uploadedById: user.id,
       name: file.name,
-      fileUrl: "", // Will be updated after actual file upload to storage
+      fileUrl: "", // Updated after actual file upload to storage
       mimeType,
       fileSize: buffer.byteLength,
       category,
-      ocrText: ocrText.slice(0, 5000) || null,
+      description: ocrText ? `OCR: ${ocrText.slice(0, 200)}` : undefined,
     },
   });
 
@@ -105,6 +86,7 @@ export async function POST(req: Request) {
     data: {
       documentId: doc.id,
       category,
+      categoryLabel: label,
       confidence,
       ocrPreview: ocrText.slice(0, 500),
       name: file.name,
