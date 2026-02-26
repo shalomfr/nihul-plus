@@ -799,11 +799,11 @@ export default function BankingPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      transfer.status === "EXECUTED" ? "bg-[#d1fae5]" :
+                      transfer.status === "COMPLETED" || transfer.status === "APPROVED" ? "bg-[#d1fae5]" :
                       transfer.status === "REJECTED" ? "bg-[#fee2e2]" :
                       transfer.status === "PENDING_APPROVAL" ? "bg-[#fef3c7]" : "bg-[#eff6ff]"
                     }`}>
-                      {transfer.status === "EXECUTED" ? <CheckCircle2 size={18} className="text-[#16a34a]" /> :
+                      {transfer.status === "COMPLETED" || transfer.status === "APPROVED" ? <CheckCircle2 size={18} className="text-[#16a34a]" /> :
                        transfer.status === "REJECTED" ? <XCircle size={18} className="text-[#ef4444]" /> :
                        transfer.status === "PENDING_APPROVAL" ? <Clock size={18} className="text-[#d97706]" /> :
                        <Send size={18} className="text-[#2563eb]" />}
