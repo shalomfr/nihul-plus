@@ -205,7 +205,7 @@ export async function generateAnnualReportHtml(
     <tbody>
       ${compliance.map(c => `
       <tr>
-        <td>${c.itemName}</td>
+        <td>${c.name}</td>
         <td>${c.dueDate ? new Date(c.dueDate).toLocaleDateString("he-IL") : "—"}</td>
         <td><span class="badge ${
           c.status === "OK" ? "badge-ok" :

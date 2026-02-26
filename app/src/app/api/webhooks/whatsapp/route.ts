@@ -118,7 +118,7 @@ async function handleWhatsAppCommand(phone: string, body: string): Promise<strin
     for (const item of items) {
       const dueStr = item.dueDate ? new Date(item.dueDate).toLocaleDateString("he-IL") : "—";
       const icon = item.status === "EXPIRED" ? "🔴" : item.status === "WARNING" ? "🟡" : "⚪";
-      lines.push(`${icon} ${item.itemName} — ${dueStr}`);
+      lines.push(`${icon} ${item.name} — ${dueStr}`);
     }
     return lines.join("\n");
   }
