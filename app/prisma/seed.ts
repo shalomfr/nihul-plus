@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { seedRegulatoryCalendar } from "../src/lib/regulatory-calendar-seeds";
 
 const prisma = new PrismaClient();
 
@@ -54,8 +55,9 @@ async function main() {
   });
   console.log("Manager: yossi@or-letzion.org.il");
 
-  // All other data (banking, compliance, donors, etc.) is managed
-  // through the application UI — no demo data is seeded.
+  // ==================== REGULATORY CALENDAR ====================
+  const seededItems = await seedRegulatoryCalendar(org.id);
+  console.log(`Regulatory calendar: ${seededItems} items seeded`);
 
   console.log("\nSeed completed!");
   console.log(`\nLogin credentials:`);
