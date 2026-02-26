@@ -87,7 +87,7 @@ async function launchBrowser(): Promise<{ browser: Browser; page: Page }> {
   const browser = await puppeteer.launch({
     executablePath: await chromium.executablePath(),
     args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
-    headless: chromium.headless,
+    headless: true,
     defaultViewport: { width: 1280, height: 900 },
     timeout: 60_000,
   });

@@ -23,6 +23,7 @@ import {
   RefreshCw,
   Zap,
   Calculator,
+  Receipt,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
@@ -123,6 +124,7 @@ const QUICK_ACTIONS = [
   { href: "/portal/documents", icon: FileText, label: "מסמכים", color: "#1e293b", bg: "#f8f9fc" },
   { href: "/portal/banking", icon: Landmark, label: "בנק", color: "#16a34a", bg: "#f0fdf4" },
   { href: "/portal/status", icon: Shield, label: "ניהול תקין", color: "#dc2626", bg: "#fef2f2" },
+  { href: "/portal/invoices", icon: Receipt, label: "חשבוניות", color: "#ea580c", bg: "#fff7ed" },
   { href: "/portal/automations", icon: Zap, label: "אוטומציות", color: "#f59e0b", bg: "#fffbeb" },
   { href: "/portal/accountant", icon: Calculator, label: "רואה חשבון", color: "#0f766e", bg: "#f0fdfa" },
   { href: "/portal/calendar", icon: Calendar, label: "לוח שנה", color: "#9333ea", bg: "#faf5ff" },
