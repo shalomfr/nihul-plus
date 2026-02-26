@@ -465,12 +465,20 @@ export default function BankingPage() {
 
       {/* Connection Status Banner */}
       {connectionInfo && !connectionInfo.isConfigured && (
-        <div className="bg-[#fffbeb] rounded-2xl border border-[#fde68a] p-4 mb-6 flex items-center gap-3" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
-          <AlertCircle size={20} className="text-[#d97706] flex-shrink-0" />
-          <div>
-            <span className="text-sm font-medium text-[#92400e]">סנכרון בנק לא מוגדר — </span>
-            <span className="text-sm text-[#92400e]">חשבונות מנוהלים ידנית. לסנכרון אוטומטי, הגדר חיבור scraper בהגדרות.</span>
+        <div className="bg-[#fffbeb] rounded-2xl border border-[#fde68a] p-4 mb-6 flex items-center justify-between gap-3" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+          <div className="flex items-center gap-3">
+            <AlertCircle size={20} className="text-[#d97706] flex-shrink-0" />
+            <div>
+              <span className="text-sm font-medium text-[#92400e]">סנכרון בנק לא מוגדר — </span>
+              <span className="text-sm text-[#92400e]">חשבונות מנוהלים ידנית. לסנכרון אוטומטי, חבר את הבנק שלך.</span>
+            </div>
           </div>
+          <button
+            onClick={() => { setTab("accounts"); setShowBankConnectModal(true); }}
+            className="flex-shrink-0 text-sm font-semibold text-white bg-[#d97706] hover:bg-[#b45309] px-4 py-2 rounded-xl transition-colors"
+          >
+            חבר בנק
+          </button>
         </div>
       )}
 
