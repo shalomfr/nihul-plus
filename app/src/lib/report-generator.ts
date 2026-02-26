@@ -223,7 +223,7 @@ export async function generateAnnualReportHtml(
     <tbody>
       <tr><td>מספר העברות</td><td>${transfers.length}</td></tr>
       <tr><td>סכום כולל</td><td>${fmt(transfers.reduce((s, t) => s + t.amount, 0))}</td></tr>
-      <tr><td>מאושרות ובוצעו</td><td>${transfers.filter(t => t.status === "EXECUTED").length}</td></tr>
+      <tr><td>מאושרות ובוצעו</td><td>${transfers.filter(t => t.status === "COMPLETED" || t.status === "APPROVED").length}</td></tr>
     </tbody>
   </table>` : ""}
 
