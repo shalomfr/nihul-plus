@@ -24,7 +24,7 @@ export async function runClassifyTransactions() {
   for (const tx of transactions) {
     try {
       const result = await classifyTransaction(
-        tx.description,
+        tx.description ?? "",
         tx.amount,
         tx.direction as "CREDIT" | "DEBIT"
       );
