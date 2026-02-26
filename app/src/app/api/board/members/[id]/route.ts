@@ -31,6 +31,7 @@ export const PUT = withErrorHandler(async (req: Request, { params }: { params: P
       ...(body.email !== undefined ? { email: body.email } : {}),
       ...(body.phone !== undefined ? { phone: body.phone } : {}),
       ...(body.isActive !== undefined ? { isActive: body.isActive } : {}),
+      ...(body.isAuthorizedSignatory !== undefined ? { isAuthorizedSignatory: body.isAuthorizedSignatory } : {}),
     },
   });
 

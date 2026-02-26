@@ -6,6 +6,7 @@ import { runComplianceReminders } from "../../lib/jobs/compliance-reminders";
 import { runCleanupLogs } from "../../lib/jobs/cleanup-logs";
 import { runWeeklyReport } from "../../lib/jobs/weekly-report";
 import { runMonthlyReport } from "../../lib/jobs/monthly-report";
+import { runClassifyTransactions } from "../../lib/jobs/classify-transactions";
 import type { CronJobType } from "../../lib/scheduler";
 
 type ScheduledJobData = {
@@ -44,6 +45,9 @@ export async function processScheduledJob(job: Job<ScheduledJobData>) {
       break;
     case "MONTHLY_REPORT":
       await runMonthlyReport();
+      break;
+    case "CLASSIFY_TRANSACTIONS":
+      await runClassifyTransactions();
       break;
     default:
       console.warn(`[scheduled] Unknown job type: ${type}`);

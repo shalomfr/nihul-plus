@@ -5,8 +5,19 @@ import { useToast } from "@/components/Toast";
 import {
   Landmark, ArrowUpDown, Receipt, Plus, RefreshCw,
   TrendingUp, TrendingDown, Building2, CreditCard, AlertCircle,
-  X, Filter, Send, CheckCircle2, Clock, XCircle,
+  X, Filter, Send, CheckCircle2, Clock, XCircle, Wifi, WifiOff, ScanLine,
 } from "lucide-react";
+
+type BankScraperConnection = {
+  id: string;
+  companyId: string;
+  bankName: string;
+  status: string;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  accountsFound: number;
+  txnsSynced: number;
+};
 
 type BankAccount = {
   id: string;
@@ -66,6 +77,14 @@ type ConnectionInfo = {
   isConfigured: boolean;
   supportedBanks: { bankCode: number; name: string; icon: string }[];
   connections: { bankCode: number; bankName: string; status: string }[];
+};
+
+type SupportedBank = {
+  companyId: string;
+  name: string;
+  icon: string;
+  type: "bank" | "card";
+  fields: { key: string; label: string; type: "text" | "password" }[];
 };
 
 const tabs = [
@@ -145,9 +164,25 @@ export default function BankingPage() {
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showBankConnectModal, setShowBankConnectModal] = useState(false);
+  const [showOcrModal, setShowOcrModal] = useState(false);
+  const [selectedBankForConnect, setSelectedBankForConnect] = useState<SupportedBank | null>(null);
+  const [scraperConnections, setScraperConnections] = useState<BankScraperConnection[]>([]);
+  const [supportedBanks, setSupportedBanks] = useState<SupportedBank[]>([]);
+  const [scraperConnecting, setScraperConnecting] = useState(false);
+  const [ocrFile, setOcrFile] = useState<File | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState<{
+    amount: number | null; date: string; vendor: string | null;
+    invoiceNumber: string | null; description: string; category: string;
+  } | null>(null);
   const [directionFilter, setDirectionFilter] = useState<string>("");
   const [transferDestType, setTransferDestType] = useState<"internal" | "external">("external");
+  const [skipApproval, setSkipApproval] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [signatories, setSignatories] = useState<{ id: string; name: string; role: string; email: string | null; phone: string | null; isAuthorizedSignatory: boolean; isActive: boolean }[]>([]);
+  const [signatoryEditing, setSignatoryEditing] = useState<string | null>(null);
+  const [signatoryForm, setSignatoryForm] = useState<{ email: string; phone: string }>({ email: "", phone: "" });
   const { showSuccess, showError } = useToast();
 
   const fetchAccounts = useCallback(async () => {
@@ -195,14 +230,31 @@ export default function BankingPage() {
     }
   }, []);
 
+  const fetchScraperConnections = useCallback(async () => {
+    const res = await fetch("/api/banking/scraper");
+    if (res.ok) {
+      const json = await res.json();
+      setScraperConnections(json.data?.connections ?? []);
+      setSupportedBanks(json.data?.supportedBanks ?? []);
+    }
+  }, []);
+
+  const fetchSignatories = useCallback(async () => {
+    const res = await fetch("/api/board/members");
+    if (res.ok) {
+      const json = await res.json();
+      setSignatories(json.data ?? []);
+    }
+  }, []);
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await Promise.all([fetchAccounts(), fetchExpenses(), fetchConnection(), fetchTransfers()]);
+      await Promise.all([fetchAccounts(), fetchExpenses(), fetchConnection(), fetchTransfers(), fetchScraperConnections(), fetchSignatories()]);
       setLoading(false);
     };
     load();
-  }, [fetchAccounts, fetchExpenses, fetchConnection, fetchTransfers]);
+  }, [fetchAccounts, fetchExpenses, fetchConnection, fetchTransfers, fetchScraperConnections, fetchSignatories]);
 
   useEffect(() => {
     if (selectedAccountId && tab === "transactions") {
@@ -263,16 +315,18 @@ export default function BankingPage() {
         body.toAccountId = form.get("toAccountId");
       } else {
         body.toExternalAccount = form.get("toExternalAccount");
-        body.toExternalBankCode = form.get("toExternalBankCode");
+        body.toExternalBankCode = form.get("toExternalBankCode") || undefined;
+        body.toExternalBranchNumber = form.get("toExternalBranchNumber") || undefined;
         body.toExternalName = form.get("toExternalName");
       }
+      body.skipApproval = skipApproval;
       const res = await fetch("/api/banking/transfers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       if (res.ok) {
-        showSuccess("העברה נוצרה — נשלחו הודעות לאישור מורשי חתימה");
+        showSuccess(skipApproval ? "העברה אושרה ישירות ✓" : "העברה נוצרה — נשלחו הודעות לאישור מורשי חתימה");
         setShowTransferModal(false);
         fetchTransfers();
       } else {
@@ -283,6 +337,86 @@ export default function BankingPage() {
       showError("שגיאה ביצירת העברה");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleConnectBank = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedBankForConnect) return;
+    const form = new FormData(e.currentTarget);
+    const credentials: Record<string, string> = {};
+    for (const field of selectedBankForConnect.fields) {
+      credentials[field.key] = form.get(field.key) as string ?? "";
+    }
+    setScraperConnecting(true);
+    try {
+      const res = await fetch("/api/banking/scraper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId: selectedBankForConnect.companyId, credentials }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        const s = json.data?.sync;
+        showSuccess(`${selectedBankForConnect.name} מחובר! ${s ? `נמצאו ${s.accountsFound} חשבונות, ${s.txnsSynced} תנועות.` : ""}`);
+        setShowBankConnectModal(false);
+        setSelectedBankForConnect(null);
+        await Promise.all([fetchAccounts(), fetchScraperConnections()]);
+      } else {
+        showError(json.data?.error ?? json.error ?? "שגיאה בחיבור");
+      }
+    } catch {
+      showError("שגיאת רשת");
+    } finally {
+      setScraperConnecting(false);
+    }
+  };
+
+  const handleOcrScan = async () => {
+    if (!ocrFile) return;
+    setOcrLoading(true);
+    try {
+      const form = new FormData();
+      form.append("file", ocrFile);
+      const res = await fetch("/api/ocr/invoice", { method: "POST", body: form });
+      if (res.ok) {
+        const json = await res.json();
+        setOcrResult(json.data?.extracted ?? null);
+      } else {
+        showError("שגיאה בסריקה");
+      }
+    } catch {
+      showError("שגיאה בסריקה");
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const handleOcrCreateExpense = async () => {
+    if (!ocrResult) return;
+    try {
+      const res = await fetch("/api/expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: ocrResult.amount ?? 0,
+          description: ocrResult.description,
+          category: ocrResult.category,
+          vendor: ocrResult.vendor ?? undefined,
+          expenseDate: new Date(ocrResult.date).toISOString(),
+        }),
+      });
+      if (res.ok) {
+        showSuccess("הוצאה נוצרה מהחשבונית!");
+        setShowOcrModal(false);
+        setOcrFile(null);
+        setOcrResult(null);
+        fetchExpenses();
+      } else {
+        showError("שגיאה ביצירת הוצאה");
+      }
+    } catch {
+      showError("שגיאה ביצירת הוצאה");
     }
   };
 
@@ -419,61 +553,121 @@ export default function BankingPage() {
 
       {/* ── ACCOUNTS TAB ── */}
       {tab === "accounts" && (
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <button
-              onClick={() => setShowAccountModal(true)}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Plus size={16} />
-              הוסף חשבון בנק
-            </button>
+        <div className="space-y-6">
+          {/* Bank tiles grid */}
+          <div>
+            <div className="text-sm font-semibold text-[#1e293b] mb-3">חבר את חשבון הבנק שלך — לחץ על הבנק לחיבור אוטומטי:</div>
+            <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+              {supportedBanks.filter(b => b.type === "bank").map((bank) => {
+                const conn = scraperConnections.find(c => c.companyId === bank.companyId);
+                const isConnected = conn?.status === "ACTIVE";
+                return (
+                  <button
+                    key={bank.companyId}
+                    onClick={() => { setSelectedBankForConnect(bank); setShowBankConnectModal(true); }}
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all hover:shadow-md ${
+                      isConnected
+                        ? "border-[#bbf7d0] bg-[#f0fdf4]"
+                        : "border-[#e8ecf4] bg-white hover:border-[#2563eb]"
+                    }`}
+                  >
+                    <span className="text-3xl">{bank.icon}</span>
+                    <span className="text-[11px] font-medium text-[#1e293b] text-center leading-tight">{bank.name}</span>
+                    {isConnected && (
+                      <span className="absolute top-2 left-2">
+                        <Wifi size={12} className="text-[#16a34a]" />
+                      </span>
+                    )}
+                    {conn && conn.status === "ERROR" && (
+                      <span className="absolute top-2 left-2">
+                        <WifiOff size={12} className="text-[#ef4444]" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {supportedBanks.filter(b => b.type === "card").length > 0 && (
+              <>
+                <div className="text-sm font-semibold text-[#1e293b] mb-3 mt-5">כרטיסי אשראי:</div>
+                <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                  {supportedBanks.filter(b => b.type === "card").map((bank) => {
+                    const conn = scraperConnections.find(c => c.companyId === bank.companyId);
+                    const isConnected = conn?.status === "ACTIVE";
+                    return (
+                      <button
+                        key={bank.companyId}
+                        onClick={() => { setSelectedBankForConnect(bank); setShowBankConnectModal(true); }}
+                        className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all hover:shadow-md ${
+                          isConnected ? "border-[#bbf7d0] bg-[#f0fdf4]" : "border-[#e8ecf4] bg-white hover:border-[#2563eb]"
+                        }`}
+                      >
+                        <span className="text-3xl">{bank.icon}</span>
+                        <span className="text-[11px] font-medium text-[#1e293b] text-center leading-tight">{bank.name}</span>
+                        {isConnected && <span className="absolute top-2 left-2"><Wifi size={12} className="text-[#16a34a]" /></span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
-          {accounts.map((account) => (
-            <div
-              key={account.id}
-              className={`bg-white rounded-2xl border border-[#e8ecf4] p-5 ${account.isPrimary ? "border-r-4 border-r-[#2563eb]" : ""}`}
-              style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#eff6ff] flex items-center justify-center text-2xl">
-                    🏦
+
+          {/* Connected accounts */}
+          {accounts.length > 0 && (
+            <div>
+              <div className="text-sm font-semibold text-[#1e293b] mb-3">חשבונות מחוברים:</div>
+              <div className="space-y-3">
+                {accounts.map((account) => (
+                  <div
+                    key={account.id}
+                    className={`bg-white rounded-2xl border border-[#e8ecf4] p-5 ${account.isPrimary ? "border-r-4 border-r-[#2563eb]" : ""}`}
+                    style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-[#eff6ff] flex items-center justify-center text-2xl">🏦</div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-[#1e293b]">{account.bankName}</span>
+                            {account.isPrimary && (
+                              <span className="text-[10px] bg-[#eff6ff] text-[#2563eb] px-2 py-0.5 rounded-full font-medium">ראשי</span>
+                            )}
+                            {!account.isActive && (
+                              <span className="text-[10px] bg-[#f3f4f6] text-[#6b7280] px-2 py-0.5 rounded-full font-medium">לא פעיל</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-[#64748b] mt-0.5">
+                            סניף {account.branchNumber} | חשבון {account.accountNumber}
+                            {account._count && <span className="mr-2">• {account._count.transactions} תנועות</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-left">
+                        <div className="text-lg font-bold text-[#1e293b]">{fmt(account.balance)}</div>
+                        {account.lastSyncAt && (
+                          <div className="text-[10px] text-[#94a3b8]">עודכן {fmtDate(account.lastSyncAt)}</div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-[#1e293b]">{account.bankName}</span>
-                      {account.isPrimary && (
-                        <span className="text-[10px] bg-[#eff6ff] text-[#2563eb] px-2 py-0.5 rounded-full font-medium">ראשי</span>
-                      )}
-                      {!account.isActive && (
-                        <span className="text-[10px] bg-[#f3f4f6] text-[#6b7280] px-2 py-0.5 rounded-full font-medium">לא פעיל</span>
-                      )}
-                    </div>
-                    <div className="text-xs text-[#64748b] mt-0.5">
-                      סניף {account.branchNumber} | חשבון {account.accountNumber}
-                      {account._count && <span className="mr-2">• {account._count.transactions} תנועות</span>}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-left">
-                  <div className="text-lg font-bold text-[#1e293b]">{fmt(account.balance)}</div>
-                  {account.lastSyncAt && (
-                    <div className="text-[10px] text-[#94a3b8]">
-                      עודכן {fmtDate(account.lastSyncAt)}
-                    </div>
-                  )}
-                </div>
+                ))}
               </div>
             </div>
-          ))}
-          {accounts.length === 0 && (
-            <div className="text-center py-12 text-[#94a3b8]">
-              <Building2 size={40} className="mx-auto mb-3 opacity-50" />
-              <p>אין חשבונות בנק עדיין</p>
-              <p className="text-xs mt-1">לחץ "הוסף חשבון בנק" להוספת חשבון ידני</p>
-            </div>
           )}
+
+          {/* Manual add fallback */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-[#e8ecf4]" />
+            <span className="text-xs text-[#94a3b8]">או הוסף ידנית</span>
+            <div className="flex-1 h-px bg-[#e8ecf4]" />
+          </div>
+          <div className="flex justify-center">
+            <button onClick={() => setShowAccountModal(true)} className="flex items-center gap-2 text-sm text-[#64748b] hover:text-[#2563eb] transition-colors">
+              <Plus size={14} />
+              הוסף חשבון ידני (ללא סנכרון)
+            </button>
+          </div>
         </div>
       )}
 
@@ -496,6 +690,108 @@ export default function BankingPage() {
               ⚠️ יש להוסיף חשבון בנק תחילה (לשונית "חשבונות") לפני ביצוע העברה.
             </div>
           )}
+
+          {/* ── Signatories management panel ── */}
+          <div className="bg-white rounded-2xl border border-[#e8ecf4] p-5 mb-5" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+            <div className="text-[14px] font-bold text-[#1e293b] mb-3">✍️ מורשי חתימה</div>
+            <div className="text-[12px] text-[#64748b] mb-4">הגדר מי מורשה לאשר העברות בנקאיות ומה כתובת המייל שלו לקבלת הודעות</div>
+            {signatories.filter(m => m.isActive).length === 0 ? (
+              <div className="text-[13px] text-[#94a3b8] text-center py-4">אין חברי ועד פעילים — הוסף דרך דף <a href="/portal/board" className="text-[#2563eb] underline">ועד מנהל</a></div>
+            ) : (
+              <div className="space-y-2">
+                {signatories.filter(m => m.isActive).map(member => (
+                  <div key={member.id} className={`rounded-xl border p-3 transition-all ${member.isAuthorizedSignatory ? "border-[#bfdbfe] bg-[#eff6ff]" : "border-[#e8ecf4] bg-white"}`}>
+                    {signatoryEditing === member.id ? (
+                      <div className="space-y-2">
+                        <div className="text-[13px] font-semibold text-[#1e293b] mb-2">{member.name} — {member.role}</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-medium text-[#64748b] block mb-1">מייל לאישורים</label>
+                            <input
+                              type="email"
+                              value={signatoryForm.email}
+                              onChange={e => setSignatoryForm(f => ({ ...f, email: e.target.value }))}
+                              placeholder="email@example.com"
+                              className="w-full border border-[#e2e8f0] rounded-lg px-2 py-1.5 text-[12px]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-medium text-[#64748b] block mb-1">טלפון WhatsApp</label>
+                            <input
+                              type="tel"
+                              value={signatoryForm.phone}
+                              onChange={e => setSignatoryForm(f => ({ ...f, phone: e.target.value }))}
+                              placeholder="05X-XXXXXXX"
+                              className="w-full border border-[#e2e8f0] rounded-lg px-2 py-1.5 text-[12px]"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={async () => {
+                              await fetch(`/api/board/members/${member.id}`, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: signatoryForm.email || null, phone: signatoryForm.phone || null }),
+                              });
+                              setSignatoryEditing(null);
+                              fetchSignatories();
+                              showSuccess("פרטי מורשה חתימה עודכנו");
+                            }}
+                            className="text-[12px] font-semibold text-white bg-[#2563eb] hover:bg-[#1d4ed8] px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            שמור
+                          </button>
+                          <button
+                            onClick={() => setSignatoryEditing(null)}
+                            className="text-[12px] text-[#64748b] px-3 py-1.5 rounded-lg border border-[#e8ecf4] hover:bg-[#f8f9fc] transition-colors"
+                          >
+                            ביטול
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 flex-1 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={member.isAuthorizedSignatory}
+                            onChange={async (e) => {
+                              await fetch(`/api/board/members/${member.id}`, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ isAuthorizedSignatory: e.target.checked }),
+                              });
+                              fetchSignatories();
+                            }}
+                            className="w-4 h-4 rounded accent-[#2563eb]"
+                          />
+                          <div>
+                            <div className="text-[13px] font-semibold text-[#1e293b]">{member.name}</div>
+                            <div className="text-[11px] text-[#64748b]">
+                              {member.role}
+                              {member.email && <span className="mr-2">· {member.email}</span>}
+                              {member.phone && <span className="mr-2">· {member.phone}</span>}
+                              {!member.email && !member.phone && <span className="text-[#ef4444] mr-2"> · אין מייל/טלפון</span>}
+                            </div>
+                          </div>
+                        </label>
+                        <button
+                          onClick={() => {
+                            setSignatoryEditing(member.id);
+                            setSignatoryForm({ email: member.email ?? "", phone: member.phone ?? "" });
+                          }}
+                          className="text-[11px] text-[#2563eb] hover:underline flex-shrink-0"
+                        >
+                          ✏️ ערוך
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="space-y-3">
             {transfers.map((transfer) => (
@@ -637,7 +933,14 @@ export default function BankingPage() {
       {/* ── EXPENSES TAB ── */}
       {tab === "expenses" && (
         <div>
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end gap-2 mb-4">
+            <button
+              onClick={() => setShowOcrModal(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-[#e8ecf4] rounded-xl text-sm font-medium text-[#64748b] hover:bg-[#f8f9fc] hover:border-[#2563eb] hover:text-[#2563eb] transition-all"
+            >
+              <ScanLine size={16} />
+              סרוק חשבונית
+            </button>
             <button
               onClick={() => setShowExpenseModal(true)}
               className="btn-primary flex items-center gap-2"
@@ -756,9 +1059,15 @@ export default function BankingPage() {
                 <X size={18} className="text-[#64748b]" />
               </button>
             </div>
-            <div className="bg-[#eff6ff] rounded-xl p-3 mb-4 text-xs text-[#1e40af]">
-              ✍️ לאחר יצירת ההעברה, יישלחו הודעות אימייל ו-WhatsApp לכל מורשי החתימה לאישור.
-            </div>
+            {skipApproval ? (
+              <div className="bg-[#fef3c7] rounded-xl p-3 mb-4 text-xs text-[#92400e]">
+                ⚡ ההעברה תאושר ישירות — ללא המתנה למורשי חתימה.
+              </div>
+            ) : (
+              <div className="bg-[#eff6ff] rounded-xl p-3 mb-4 text-xs text-[#1e40af]">
+                ✍️ לאחר יצירת ההעברה, יישלחו הודעות אימייל ו-WhatsApp לכל מורשי החתימה לאישור.
+              </div>
+            )}
             <form onSubmit={handleAddTransfer} className="space-y-4">
               <div>
                 <label className="text-xs font-medium text-[#64748b] mb-1 block">חשבון מקור *</label>
@@ -800,10 +1109,14 @@ export default function BankingPage() {
                       <label className="text-xs font-medium text-[#64748b] mb-1 block">שם הנמען *</label>
                       <input name="toExternalName" required={transferDestType === "external"} className="w-full border border-[#e8ecf4] rounded-lg px-3 py-2 text-sm" placeholder="שם מלא / שם עסק" />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       <div>
                         <label className="text-xs font-medium text-[#64748b] mb-1 block">מספר חשבון *</label>
                         <input name="toExternalAccount" required={transferDestType === "external"} className="w-full border border-[#e8ecf4] rounded-lg px-3 py-2 text-sm" placeholder="12345678" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-[#64748b] mb-1 block">מספר סניף</label>
+                        <input name="toExternalBranchNumber" className="w-full border border-[#e8ecf4] rounded-lg px-3 py-2 text-sm" placeholder="001" />
                       </div>
                       <div>
                         <label className="text-xs font-medium text-[#64748b] mb-1 block">בנק</label>
@@ -839,10 +1152,24 @@ export default function BankingPage() {
                 <textarea name="description" rows={2} className="w-full border border-[#e8ecf4] rounded-lg px-3 py-2 text-sm resize-none" />
               </div>
 
+              {/* Skip approval toggle */}
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-[#e8ecf4] cursor-pointer hover:bg-[#f8f9fc] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={skipApproval}
+                  onChange={e => setSkipApproval(e.target.checked)}
+                  className="w-4 h-4 rounded accent-[#2563eb]"
+                />
+                <div>
+                  <div className="text-sm font-semibold text-[#1e293b]">⚡ אשר ישירות — ללא המתנה למורשי חתימה</div>
+                  <div className="text-xs text-[#64748b]">מתאים להעברות קטנות או דחופות</div>
+                </div>
+              </label>
+
               <div className="flex gap-3 pt-2">
                 <button type="submit" disabled={submitting} className="btn-primary flex-1 flex items-center justify-center gap-2">
                   <Send size={15} />
-                  {submitting ? "שולח..." : "צור והשלח לאישור"}
+                  {submitting ? "שולח..." : skipApproval ? "צור ואשר עכשיו" : "צור והשלח לאישור"}
                 </button>
                 <button type="button" onClick={() => setShowTransferModal(false)} className="flex-1 py-2 px-4 border border-[#e8ecf4] rounded-xl text-sm font-medium text-[#64748b] hover:bg-[#f8f9fc]">
                   ביטול
@@ -908,6 +1235,169 @@ export default function BankingPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL: Bank Scraper Connect ══ */}
+      {showBankConnectModal && selectedBankForConnect && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6" dir="rtl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{selectedBankForConnect.icon}</span>
+                <div>
+                  <h3 className="text-lg font-bold text-[#1e293b]">חבר {selectedBankForConnect.name}</h3>
+                  <p className="text-xs text-[#64748b]">הכנס פרטי כניסה לאתר הבנק</p>
+                </div>
+              </div>
+              <button onClick={() => { setShowBankConnectModal(false); setSelectedBankForConnect(null); }} className="p-2 hover:bg-[#f8f9fc] rounded-lg">
+                <X size={18} className="text-[#64748b]" />
+              </button>
+            </div>
+
+            <div className="bg-[#eff6ff] rounded-xl p-3 mb-4 text-xs text-[#1e40af]">
+              🔐 הפרטים מוצפנים ומשמשים רק לסנכרון אוטומטי. לא נשמרים בטקסט גלוי.
+            </div>
+
+            <form onSubmit={handleConnectBank} className="space-y-4">
+              {selectedBankForConnect.fields.map(field => (
+                <div key={field.key}>
+                  <label className="text-xs font-medium text-[#64748b] mb-1 block">{field.label} *</label>
+                  <input
+                    name={field.key}
+                    type={field.type}
+                    required
+                    autoComplete={field.type === "password" ? "current-password" : "username"}
+                    className="w-full border border-[#e8ecf4] rounded-lg px-3 py-2 text-sm"
+                    placeholder={field.label}
+                  />
+                </div>
+              ))}
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={scraperConnecting} className="btn-primary flex-1 flex items-center justify-center gap-2">
+                  {scraperConnecting ? <RefreshCw size={15} className="animate-spin" /> : <Wifi size={15} />}
+                  {scraperConnecting ? "מתחבר..." : "חבר וסנכרן"}
+                </button>
+                <button type="button" onClick={() => { setShowBankConnectModal(false); setSelectedBankForConnect(null); }} className="flex-1 py-2 px-4 border border-[#e8ecf4] rounded-xl text-sm font-medium text-[#64748b] hover:bg-[#f8f9fc]">
+                  ביטול
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL: OCR Invoice Scanner ══ */}
+      {showOcrModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg p-6" dir="rtl">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-lg font-bold text-[#1e293b]">📸 סריקת חשבונית</h3>
+                <p className="text-xs text-[#64748b]">צלם או העלה חשבונית — הפרטים ייחלצו אוטומטית</p>
+              </div>
+              <button onClick={() => { setShowOcrModal(false); setOcrFile(null); setOcrResult(null); }} className="p-2 hover:bg-[#f8f9fc] rounded-lg">
+                <X size={18} className="text-[#64748b]" />
+              </button>
+            </div>
+
+            {!ocrResult ? (
+              <div className="space-y-4">
+                <div
+                  className="border-2 border-dashed border-[#e8ecf4] rounded-xl p-8 text-center cursor-pointer hover:border-[#2563eb] transition-colors"
+                  onClick={() => document.getElementById("ocr-file-input")?.click()}
+                >
+                  <ScanLine size={32} className="mx-auto mb-3 text-[#94a3b8]" />
+                  <p className="text-sm font-medium text-[#64748b]">לחץ לבחירת תמונה</p>
+                  <p className="text-xs text-[#94a3b8] mt-1">JPG, PNG, PDF — עד 10MB</p>
+                  <input
+                    id="ocr-file-input"
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    onChange={e => setOcrFile(e.target.files?.[0] ?? null)}
+                  />
+                </div>
+                {ocrFile && (
+                  <div className="bg-[#f0fdf4] rounded-xl p-3 text-sm text-[#16a34a]">
+                    ✅ {ocrFile.name}
+                  </div>
+                )}
+                <button
+                  onClick={handleOcrScan}
+                  disabled={!ocrFile || ocrLoading}
+                  className="btn-primary w-full flex items-center justify-center gap-2"
+                >
+                  {ocrLoading ? <RefreshCw size={16} className="animate-spin" /> : <ScanLine size={16} />}
+                  {ocrLoading ? "סורק..." : "סרוק חשבונית"}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-[#f0fdf4] rounded-xl p-4 text-sm text-[#16a34a] font-medium mb-2">
+                  ✅ פרטים חולצו בהצלחה — אשר/ערוך לפני שמירה:
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-[#64748b] mb-1 block">תיאור</label>
+                    <input
+                      value={ocrResult.description}
+                      onChange={e => setOcrResult({...ocrResult, description: e.target.value})}
+                      className="w-full border border-[#e8ecf4] rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-[#64748b] mb-1 block">סכום (₪)</label>
+                      <input
+                        type="number"
+                        value={ocrResult.amount ?? ""}
+                        onChange={e => setOcrResult({...ocrResult, amount: Number(e.target.value)})}
+                        className="w-full border border-[#e8ecf4] rounded-lg px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-[#64748b] mb-1 block">תאריך</label>
+                      <input
+                        type="date"
+                        value={ocrResult.date}
+                        onChange={e => setOcrResult({...ocrResult, date: e.target.value})}
+                        className="w-full border border-[#e8ecf4] rounded-lg px-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-[#64748b] mb-1 block">ספק</label>
+                    <input
+                      value={ocrResult.vendor ?? ""}
+                      onChange={e => setOcrResult({...ocrResult, vendor: e.target.value})}
+                      className="w-full border border-[#e8ecf4] rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-[#64748b] mb-1 block">קטגוריה</label>
+                    <select
+                      value={ocrResult.category}
+                      onChange={e => setOcrResult({...ocrResult, category: e.target.value})}
+                      className="w-full border border-[#e8ecf4] rounded-lg px-3 py-2 text-sm"
+                    >
+                      {Object.entries(categoryLabels).map(([k, v]) => (
+                        <option key={k} value={k}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button onClick={handleOcrCreateExpense} className="btn-primary flex-1">
+                    ✅ צור הוצאה
+                  </button>
+                  <button onClick={() => setOcrResult(null)} className="flex-1 py-2 px-4 border border-[#e8ecf4] rounded-xl text-sm font-medium text-[#64748b] hover:bg-[#f8f9fc]">
+                    סרוק מחדש
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

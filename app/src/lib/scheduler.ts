@@ -27,7 +27,8 @@ export type CronJobType =
   | "COMPLIANCE_REMINDERS"
   | "CLEANUP_LOGS"
   | "WEEKLY_REPORT"
-  | "MONTHLY_REPORT";
+  | "MONTHLY_REPORT"
+  | "CLASSIFY_TRANSACTIONS";
 
 interface CronJobDef {
   name: string;
@@ -73,6 +74,12 @@ export const CRON_JOBS: CronJobDef[] = [
     type: "MONTHLY_REPORT",
     pattern: "0 7 1 * *", // 1st of month 09:00 IL = 07:00 UTC
     description: "דוח חודשי פעילות",
+  },
+  {
+    name: "classify-transactions",
+    type: "CLASSIFY_TRANSACTIONS",
+    pattern: "0 8 * * *", // 10:00 IL = 08:00 UTC
+    description: "סיווג AI יומי לעסקאות בנק לא מסווגות",
   },
 ];
 

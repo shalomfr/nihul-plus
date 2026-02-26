@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowRight, Users, ShieldCheck, Megaphone, UserCheck,
   Mail, ChevronDown, ChevronUp, Loader2, CheckCircle,
+  Eye, X, RefreshCw,
 } from "lucide-react";
 import type { AuthorityEmailKey } from "@/lib/authority-email-templates";
 
@@ -65,6 +66,12 @@ export default function InstitutionsPage() {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null);
 
+  // Preview modal state
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewSubject, setPreviewSubject] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+
   useEffect(() => {
     fetch("/api/stats/portal")
       .then(r => r.json())
@@ -75,9 +82,40 @@ export default function InstitutionsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const activeMembers = members.filter(m => m.isActive);
+  // Auto-open email bot if URL has ?email= param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailKey = params.get("email") as AuthorityEmailKey | null;
+    if (emailKey && AUTHORITY_TEMPLATES.some(t => t.key === emailKey)) {
+      setShowEmailBot(true);
+      setSelectedTemplate(emailKey);
+      const tmpl = AUTHORITY_TEMPLATES.find(t => t.key === emailKey);
+      setRecipientEmail(tmpl?.defaultEmail ?? "");
+    }
+  }, []);
 
+  const activeMembers = members.filter(m => m.isActive);
   const selectedTmpl = AUTHORITY_TEMPLATES.find(t => t.key === selectedTemplate);
+
+  const handlePreview = async () => {
+    if (!selectedTemplate) return;
+    setPreviewLoading(true);
+    try {
+      const params = new URLSearchParams({ templateKey: selectedTemplate });
+      if (customNotes) params.set("customNotes", customNotes);
+      const res = await fetch(`/api/authority-emails/preview?${params.toString()}`);
+      const data = await res.json();
+      if (data.success) {
+        setPreviewHtml(data.data.html);
+        setPreviewSubject(data.data.subject);
+        setShowPreview(true);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   const handleSendEmail = async () => {
     if (!selectedTemplate) return;
@@ -227,7 +265,7 @@ export default function InstitutionsPage() {
                     <>
                       <div>
                         <label className="block text-[12px] font-semibold text-[#475569] mb-1.5">
-                          כתובת דוא"ל של הנמען
+                          כתובת דוא&quot;ל של הנמען
                         </label>
                         <input
                           type="email"
@@ -251,14 +289,25 @@ export default function InstitutionsPage() {
                         />
                       </div>
 
-                      <button
-                        onClick={handleSendEmail}
-                        disabled={sending || (!recipientEmail && !selectedTmpl.defaultEmail)}
-                        className="w-full bg-[#ca8a04] hover:bg-[#a16207] disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
-                      >
-                        {sending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-                        {sending ? "שולח..." : `שלח מייל ל${selectedTmpl.authority}`}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handlePreview}
+                          disabled={previewLoading}
+                          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-[#e2e8f0] bg-white text-[#1e293b] text-[13px] font-semibold hover:bg-[#f8f9fc] transition-colors disabled:opacity-50"
+                        >
+                          {previewLoading ? <RefreshCw size={14} className="animate-spin" /> : <Eye size={14} />}
+                          תצוגה מקדימה
+                        </button>
+
+                        <button
+                          onClick={handleSendEmail}
+                          disabled={sending || (!recipientEmail && !selectedTmpl.defaultEmail)}
+                          className="flex-1 bg-[#ca8a04] hover:bg-[#a16207] disabled:opacity-50 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                        >
+                          {sending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                          {sending ? "שולח..." : `שלח מייל ל${selectedTmpl.authority}`}
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>
@@ -267,6 +316,58 @@ export default function InstitutionsPage() {
           </div>
         </div>
       </div>
+
+      {/* ══ EMAIL PREVIEW MODAL ══ */}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowPreview(false)}>
+          <div
+            className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#f1f5f9]">
+              <div>
+                <div className="text-[15px] font-bold text-[#1e293b]">תצוגה מקדימה של המייל</div>
+                {previewSubject && <div className="text-[12px] text-[#64748b] mt-0.5">נושא: {previewSubject}</div>}
+              </div>
+              <button onClick={() => setShowPreview(false)} className="text-[#94a3b8] hover:text-[#1e293b] transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Preview iframe */}
+            <div className="flex-1 overflow-hidden p-4">
+              <iframe
+                srcDoc={previewHtml}
+                className="w-full h-full min-h-[400px] rounded-xl border border-[#e8ecf4]"
+                sandbox="allow-same-origin"
+                title="תצוגה מקדימה של מייל"
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-2 px-5 py-4 border-t border-[#f1f5f9]">
+              <button
+                onClick={() => {
+                  setShowPreview(false);
+                  handleSendEmail();
+                }}
+                disabled={sending || (!recipientEmail && !selectedTmpl?.defaultEmail)}
+                className="flex-1 bg-[#ca8a04] hover:bg-[#a16207] disabled:opacity-50 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors"
+              >
+                {sending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                {sending ? "שולח..." : "שלח עכשיו"}
+              </button>
+              <button
+                onClick={() => setShowPreview(false)}
+                className="px-5 py-2.5 rounded-xl border border-[#e2e8f0] text-[#64748b] font-medium text-[13px] hover:bg-[#f8f9fc] transition-colors"
+              >
+                חזור לעריכה
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

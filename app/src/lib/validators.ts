@@ -198,6 +198,7 @@ export const createBankTransferSchema = z.object({
   toAccountId: z.string().optional(),
   toExternalAccount: z.string().optional(),
   toExternalBankCode: z.string().optional(),
+  toExternalBranchNumber: z.string().optional(),
   toExternalName: z.string().optional(),
   amount: z.number().positive("סכום חייב להיות חיובי"),
   purpose: z.string().min(1, "מטרת ההעברה נדרשת"),
@@ -205,6 +206,7 @@ export const createBankTransferSchema = z.object({
   reference: z.string().optional(),
   supportingDocUrl: z.string().optional(),
   transferDate: z.string().datetime(),
+  skipApproval: z.boolean().optional(),
 });
 
 export const approveTransferSchema = z.object({

@@ -42,6 +42,7 @@ export const POST = withErrorHandler(async (req: Request) => {
       toAccountId: data.toAccountId,
       toExternalAccount: data.toExternalAccount,
       toExternalBankCode: data.toExternalBankCode,
+      toExternalBranchNumber: data.toExternalBranchNumber,
       toExternalName: data.toExternalName,
       amount: data.amount,
       purpose: data.purpose,
@@ -50,7 +51,9 @@ export const POST = withErrorHandler(async (req: Request) => {
       supportingDocUrl: data.supportingDocUrl,
       transferDate: new Date(data.transferDate),
       requestedById: user.id,
-      status: "PENDING_APPROVAL",
+      // If skipApproval is set, mark as approved immediately with 0 required approvals
+      status: data.skipApproval ? "APPROVED" : "PENDING_APPROVAL",
+      requiredApprovals: data.skipApproval ? 0 : 2,
     },
     include: {
       fromAccount: { select: { bankName: true, accountNumber: true } },
@@ -59,8 +62,10 @@ export const POST = withErrorHandler(async (req: Request) => {
     },
   });
 
-  // Auto-send approval notifications to all authorized signatories
-  void sendApprovalNotifications(transfer.id, user.organizationId!, Number(transfer.amount), transfer.purpose ?? "העברה בנקאית");
+  // Only send approval notifications if approval is required
+  if (!data.skipApproval) {
+    void sendApprovalNotifications(transfer.id, user.organizationId!, Number(transfer.amount), transfer.purpose ?? "העברה בנקאית");
+  }
 
   return apiResponse(transfer, 201);
 });

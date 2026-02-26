@@ -1,7 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import Topbar from "@/components/Topbar";
-import { CheckCircle2, AlertTriangle, AlertCircle, Shield, ChevronDown, Search, Filter, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import {
+  CheckCircle2, AlertTriangle, AlertCircle, Shield, ChevronDown,
+  Search, Filter, RefreshCw, X, Mail, Upload, Users, Landmark,
+  Phone, FileText, Zap, ArrowRight,
+} from "lucide-react";
 import { useToast } from "@/components/Toast";
 
 type ComplianceItem = {
@@ -43,6 +48,138 @@ const FREQ_LABELS: Record<string, string> = {
 
 type FilterMode = "all" | "attention" | "ok";
 
+type SmartActionDef = {
+  label: string;
+  description: string;
+  icon: "mail" | "upload" | "users" | "bank" | "phone" | "docs" | "zap";
+  href?: string;
+  /** email template key to open in institutions page */
+  emailTemplate?: string;
+};
+
+type SmartActionsConfig = {
+  headline: string;
+  tip: string;
+  actions: SmartActionDef[];
+};
+
+function getSmartActions(item: ComplianceItem): SmartActionsConfig {
+  switch (item.category) {
+    case "ANNUAL_OBLIGATIONS":
+      return {
+        headline: "חובה שנתית לרשם העמותות",
+        tip: "שלח מייל מקצועי לרשם עם תבנית מוכנה, או טפל ישירות דרך הגשה מקוונת.",
+        actions: [
+          { label: "📧 שלח בקשת ארכה לרשם", description: "מייל מקצועי מוכן לשליחה", icon: "mail", href: "/portal/institutions?email=registrar_extension_request" },
+          { label: "📤 הגש מסמכים לרשם", description: "שלח מסמכים שהתבקשו", icon: "mail", href: "/portal/institutions?email=registrar_document_submission" },
+          { label: "📁 העלה מסמך לתיק", description: "שמור עותק מקומי", icon: "upload", href: "/portal/documents" },
+        ],
+      };
+
+    case "TAX_APPROVALS":
+      return {
+        headline: "אישור מרשות המסים",
+        tip: "שלח בקשה לחידוש האישור מרשות המסים. תבנית מייל מקצועית כבר מוכנה.",
+        actions: [
+          { label: "📧 בקש חידוש סעיף 46", description: "מייל לרשות המסים", icon: "mail", href: "/portal/institutions?email=tax_section46_renewal" },
+          { label: "📊 דוח תרומה מישות זרה", description: "אם רלוונטי לארגונך", icon: "mail", href: "/portal/institutions?email=tax_foreign_donation_report" },
+          { label: "📁 העלה אישור מרשות", description: "אחרי קבלת האישור", icon: "upload", href: "/portal/documents" },
+        ],
+      };
+
+    case "FOUNDING_DOCS":
+      return {
+        headline: "מסמך יסוד חסר",
+        tip: "יש להעלות את המסמך לתיק העמותה כדי שיהיה נגיש בכל עת.",
+        actions: [
+          { label: "📤 העלה מסמך עכשיו", description: "הוסף לתיק הדיגיטלי", icon: "upload", href: "/portal/documents" },
+          { label: "📋 תיק העמותה המלא", description: "צפה בכל המסמכים", icon: "docs", href: "/portal/org-file" },
+        ],
+      };
+
+    case "FINANCIAL_MGMT":
+      return {
+        headline: "פעולה בנקאית / כספית נדרשת",
+        tip: "עבור לדף הבנק לביצוע הפעולה הנדרשת, או ייצא דוח לרואה החשבון.",
+        actions: [
+          { label: "🏦 פתח דף בנק", description: "ניהול חשבונות והוצאות", icon: "bank", href: "/portal/banking" },
+          { label: "🧮 דף רואה חשבון", description: "ייצוא ודוחות כספיים", icon: "docs", href: "/portal/accountant" },
+        ],
+      };
+
+    case "DISTRIBUTION_DOCS":
+      return {
+        headline: "תיעוד חלוקת כספים חסר",
+        tip: "יש לתעד כל חלוקת כספים לפי דרישות רשם העמותות — פרוטוקול החלטה + חשבונית.",
+        actions: [
+          { label: "📁 העלה תיעוד", description: "חשבונית / פרוטוקול", icon: "upload", href: "/portal/documents" },
+          { label: "👥 הוסף פרוטוקול ועד", description: "ועד מנהל — ממשל", icon: "users", href: "/portal/board" },
+        ],
+      };
+
+    case "GOVERNANCE":
+      return {
+        headline: "דרוש פעולת ממשל",
+        tip: "כנס את חברי הועד לישיבה או הוסף פרוטוקול החלטה. ניתן לשלוח הזמנה ישירה.",
+        actions: [
+          { label: "👥 זמן ישיבת ועד", description: "שלח הזמנה לחברי הועד", icon: "users", href: "/portal/board" },
+          { label: "📁 הוסף פרוטוקול", description: "העלה החלטה רשמית", icon: "upload", href: "/portal/documents" },
+          { label: "📅 תאם בלוח שנה", description: "הוסף ישיבה ליומן", icon: "docs", href: "/portal/calendar" },
+        ],
+      };
+
+    case "EMPLOYEES_VOLUNTEERS":
+      return {
+        headline: "רישום עובדים / מתנדבים",
+        tip: "עדכן את רשימת העובדים והמתנדבים כנדרש על פי רשם העמותות.",
+        actions: [
+          { label: "📁 העלה מסמך רלוונטי", description: "חוזה עבודה / הצהרה", icon: "upload", href: "/portal/documents" },
+          { label: "📧 שלח לרשם", description: "הגשת מסמכים לרשם", icon: "mail", href: "/portal/institutions?email=registrar_document_submission" },
+        ],
+      };
+
+    case "INSURANCE":
+      return {
+        headline: "כיסוי ביטוחי נדרש",
+        tip: "פנה לסוכן הביטוח לחידוש/הוצאת פוליסה, ואז העלה עותק לתיק.",
+        actions: [
+          { label: "📞 פנה למלווה", description: "קבל הכוונה מהמלווה שלך", icon: "phone", href: "/portal/contact" },
+          { label: "📁 העלה פוליסה", description: "אחרי קבלת הפוליסה", icon: "upload", href: "/portal/documents" },
+        ],
+      };
+
+    case "GEMACH":
+      return {
+        headline: "מסמך גמ\"ח חסר",
+        tip: "פעילות גמ\"ח מחייבת תיעוד מיוחד לפי הנחיות רשם העמותות.",
+        actions: [
+          { label: "📁 העלה מסמך גמ\"ח", description: "הסכם / נוהל גמ\"ח", icon: "upload", href: "/portal/documents" },
+          { label: "📧 הגש לרשם", description: "שלח עדכון לרשם", icon: "mail", href: "/portal/institutions?email=registrar_document_submission" },
+        ],
+      };
+
+    default:
+      return {
+        headline: "דרוש טיפול",
+        tip: item.description ?? "יש לטפל בפריט זה בהקדם.",
+        actions: [
+          { label: "📁 העלה מסמך", description: "הוסף לתיק הדיגיטלי", icon: "upload", href: "/portal/documents" },
+          { label: "📧 שלח מייל לרשם", description: "פנה לרשות הרלוונטית", icon: "mail", href: "/portal/institutions" },
+        ],
+      };
+  }
+}
+
+const ACTION_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  mail: Mail,
+  upload: Upload,
+  users: Users,
+  bank: Landmark,
+  phone: Phone,
+  docs: FileText,
+  zap: Zap,
+};
+
 export default function PortalStatusPage() {
   const { showSuccess, showError } = useToast();
   const [items, setItems] = useState<ComplianceItem[]>([]);
@@ -51,6 +188,7 @@ export default function PortalStatusPage() {
   const [filterMode, setFilterMode] = useState<FilterMode>("all");
   const [search, setSearch] = useState("");
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
+  const [actionModal, setActionModal] = useState<ComplianceItem | null>(null);
 
   const fetchData = () => {
     fetch("/api/compliance")
@@ -58,7 +196,6 @@ export default function PortalStatusPage() {
       .then(res => {
         if (res.success) {
           setItems(res.data.items ?? []);
-          // Open categories that have non-OK items by default
           const initialOpen: Record<string, boolean> = {};
           const cats = new Set((res.data.items ?? []).map((i: ComplianceItem) => i.category));
           cats.forEach(cat => {
@@ -68,7 +205,6 @@ export default function PortalStatusPage() {
             initialOpen[cat as string] = hasIssue;
           });
           setOpenCategories(prev => {
-            // Preserve user-opened categories on refresh
             const merged = { ...initialOpen };
             for (const key of Object.keys(prev)) {
               if (prev[key]) merged[key] = true;
@@ -100,6 +236,7 @@ export default function PortalStatusPage() {
       const data = await res.json();
       if (data.success) {
         showSuccess(`"${item.name}" סומן כמטופל`);
+        setActionModal(null);
         fetchData();
       } else {
         showError("שגיאה בעדכון הסטטוס");
@@ -122,14 +259,12 @@ export default function PortalStatusPage() {
     return true;
   });
 
-  // Group by category
   const byCategory: Record<string, ComplianceItem[]> = {};
   for (const cat of CATEGORY_ORDER) {
     const catItems = filteredItems.filter(i => i.category === cat);
     if (catItems.length > 0) byCategory[cat] = catItems;
   }
 
-  // Total stats
   const total = items.length;
   const okCount = items.filter(i => i.status === "OK").length;
   const score = total > 0 ? Math.round((okCount / total) * 100) : 0;
@@ -153,29 +288,16 @@ export default function PortalStatusPage() {
   };
 
   const getActionButton = (item: ComplianceItem) => {
-    if (item.status === "OK") return null; // OK items already show checkmark icon
+    if (item.status === "OK") return null;
     const isUpdating = updatingIds.has(item.id);
-    if (item.status === "EXPIRED") {
-      return (
-        <button
-          onClick={() => handleMarkAsHandled(item)}
-          disabled={isUpdating}
-          className="text-[11px] font-semibold text-[#2563eb] hover:text-[#1d4ed8] px-3 py-1.5 rounded-lg bg-[#eff6ff] border border-[#bfdbfe] hover:bg-[#dbeafe] transition-all disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
-        >
-          {isUpdating ? <RefreshCw size={12} className="animate-spin" /> : null}
-          חדש
-        </button>
-      );
-    }
-    // MISSING and WARNING
     return (
       <button
-        onClick={() => handleMarkAsHandled(item)}
+        onClick={() => setActionModal(item)}
         disabled={isUpdating}
-        className="text-[11px] font-semibold text-[#16a34a] hover:text-[#15803d] px-3 py-1.5 rounded-lg bg-[#f0fdf4] border border-[#bbf7d0] hover:bg-[#dcfce7] transition-all disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+        className="text-[11px] font-bold text-white px-3 py-1.5 rounded-lg bg-[#2563eb] hover:bg-[#1d4ed8] transition-all disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
       >
-        {isUpdating ? <RefreshCw size={12} className="animate-spin" /> : null}
-        סמן כמטופל
+        {isUpdating ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+        טפל עכשיו
       </button>
     );
   };
@@ -199,6 +321,8 @@ export default function PortalStatusPage() {
       </div>
     );
   }
+
+  const modalConfig = actionModal ? getSmartActions(actionModal) : null;
 
   return (
     <div className="px-4 md:px-8 pb-6 md:pb-8">
@@ -296,7 +420,6 @@ export default function PortalStatusPage() {
 
             return (
               <div key={cat} id={`cat-${cat}`} className={`anim-fade-up delay-${(idx % 4) + 1} bg-white rounded-2xl border overflow-hidden transition-all ${hasIssues ? "border-[#fde68a]" : "border-[#e8ecf4]"}`} style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
-                {/* Category header */}
                 <button
                   onClick={() => toggleCategory(cat)}
                   className="w-full flex items-center justify-between p-4 text-right hover:bg-[#f8f9fc] transition-colors"
@@ -318,7 +441,6 @@ export default function PortalStatusPage() {
                   <ChevronDown size={16} className={`text-[#64748b] transition-transform flex-shrink-0 ${isOpen ? "rotate-180" : ""}`} />
                 </button>
 
-                {/* Items list */}
                 {isOpen && (
                   <div className="divide-y divide-[#e8ecf4] border-t border-[#e8ecf4]">
                     {catItems.map(item => (
@@ -350,6 +472,81 @@ export default function PortalStatusPage() {
           })
         )}
       </div>
+
+      {/* ─── SMART ACTION MODAL ─── */}
+      {actionModal && modalConfig && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setActionModal(null)}>
+          <div
+            className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between p-5 pb-4 border-b border-[#f1f5f9]">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  {getStatusIcon(actionModal.status)}
+                  <span className="text-[15px] font-bold text-[#1e293b]">{actionModal.name}</span>
+                </div>
+                <div className="text-[12px] text-[#64748b]">{modalConfig.headline}</div>
+              </div>
+              <button onClick={() => setActionModal(null)} className="text-[#94a3b8] hover:text-[#1e293b] transition-colors ml-2 flex-shrink-0">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              {/* Tip */}
+              <div className="bg-[#fffbeb] border border-[#fde68a] rounded-xl p-3">
+                <p className="text-[12px] text-[#92400e] leading-relaxed">{modalConfig.tip}</p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="space-y-2">
+                <div className="text-[11px] font-semibold text-[#64748b] mb-2">בחר פעולה:</div>
+                {modalConfig.actions.map((action, i) => {
+                  const Icon = ACTION_ICONS[action.icon] ?? FileText;
+                  return (
+                    <Link
+                      key={i}
+                      href={action.href ?? "#"}
+                      onClick={() => setActionModal(null)}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-[#e8ecf4] hover:border-[#2563eb]/40 hover:bg-[#eff6ff] transition-all group"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-[#f8f9fc] group-hover:bg-[#eff6ff] flex items-center justify-center flex-shrink-0 transition-colors">
+                        <Icon size={16} className="text-[#2563eb]" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[13px] font-semibold text-[#1e293b]">{action.label}</div>
+                        <div className="text-[11px] text-[#64748b]">{action.description}</div>
+                      </div>
+                      <ArrowRight size={14} className="text-[#cbd5e1] group-hover:text-[#2563eb] transition-colors flex-shrink-0" />
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-2 px-5 pb-5 pt-1">
+              <button
+                onClick={() => handleMarkAsHandled(actionModal)}
+                disabled={updatingIds.has(actionModal.id)}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#f0fdf4] border border-[#bbf7d0] text-[#16a34a] font-semibold text-[13px] hover:bg-[#dcfce7] transition-colors disabled:opacity-50"
+              >
+                {updatingIds.has(actionModal.id) ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                סמן כמטופל
+              </button>
+              <button
+                onClick={() => setActionModal(null)}
+                className="px-4 py-2.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4] text-[#64748b] font-medium text-[13px] hover:bg-[#f1f5f9] transition-colors"
+              >
+                סגור
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

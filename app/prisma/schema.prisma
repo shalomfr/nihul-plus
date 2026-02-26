@@ -441,9 +441,10 @@ model BankTransfer {
   organizationId      String         @map("organization_id")
   fromAccountId       String?        @map("from_account_id")
   toAccountId         String?        @map("to_account_id")
-  toExternalAccount   String?        @map("to_external_account")
-  toExternalBankCode  String?        @map("to_external_bank_code")
-  toExternalName      String?        @map("to_external_name")
+  toExternalAccount       String?        @map("to_external_account")
+  toExternalBankCode      String?        @map("to_external_bank_code")
+  toExternalBranchNumber  String?        @map("to_external_branch_number")
+  toExternalName          String?        @map("to_external_name")
   amount              Float
   reference           String?
   description         String?
