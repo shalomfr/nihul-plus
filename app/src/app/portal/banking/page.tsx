@@ -372,6 +372,25 @@ export default function BankingPage() {
     }
   };
 
+  const handleMarkExecuted = async (transferId: string) => {
+    if (!confirm("לסמן העברה זו כבוצעה בפועל?")) return;
+    try {
+      const res = await fetch(`/api/banking/transfers/${transferId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "COMPLETED" }),
+      });
+      if (res.ok) {
+        showSuccess("העברה סומנה כבוצעה ✓");
+        await fetchTransfers();
+      } else {
+        showError("שגיאה בעדכון סטטוס");
+      }
+    } catch {
+      showError("שגיאת רשת");
+    }
+  };
+
   const handleOcrScan = async () => {
     if (!ocrFile) return;
     setOcrLoading(true);
@@ -845,11 +864,19 @@ export default function BankingPage() {
                       )}
                     </div>
                   </div>
-                  <div className="text-left flex-shrink-0">
+                  <div className="text-left flex-shrink-0 flex flex-col items-end gap-2">
                     <div className="text-lg font-bold text-[#1e293b]">{fmt(transfer.amount)}</div>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusColors[transfer.status] ?? "bg-[#f3f4f6] text-[#6b7280]"}`}>
                       {statusLabels[transfer.status] ?? transfer.status}
                     </span>
+                    {transfer.status === "APPROVED" && (
+                      <button
+                        onClick={() => handleMarkExecuted(transfer.id)}
+                        className="text-[11px] font-semibold text-white bg-[#16a34a] hover:bg-[#15803d] px-3 py-1 rounded-lg transition-colors"
+                      >
+                        ✓ בוצע בבנק
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
