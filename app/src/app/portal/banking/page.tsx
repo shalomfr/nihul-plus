@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Topbar from "@/components/Topbar";
 import { useToast } from "@/components/Toast";
 import {
@@ -153,6 +154,7 @@ const fmt = (n: number) => new Intl.NumberFormat("he-IL", { style: "currency", c
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("he-IL");
 
 export default function BankingPage() {
+  const router = useRouter();
   const [tab, setTab] = useState("accounts");
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [transactions, setTransactions] = useState<BankTransaction[]>([]);
@@ -870,12 +872,20 @@ export default function BankingPage() {
                       {statusLabels[transfer.status] ?? transfer.status}
                     </span>
                     {transfer.status === "APPROVED" && (
-                      <button
-                        onClick={() => handleMarkExecuted(transfer.id)}
-                        className="text-[11px] font-semibold text-white bg-[#16a34a] hover:bg-[#15803d] px-3 py-1 rounded-lg transition-colors"
-                      >
-                        ✓ בוצע בבנק
-                      </button>
+                      <div className="flex flex-col gap-1 items-end">
+                        <button
+                          onClick={() => router.push(`/portal/banking/execute/${transfer.id}`)}
+                          className="text-[11px] font-semibold text-white bg-[#2563eb] hover:bg-[#1d4ed8] px-3 py-1 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                          ▶ ביצוע אוטומטי
+                        </button>
+                        <button
+                          onClick={() => handleMarkExecuted(transfer.id)}
+                          className="text-[11px] font-medium text-[#64748b] hover:text-[#334155] px-2 py-0.5 rounded transition-colors"
+                        >
+                          ✓ בוצע ידנית
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
