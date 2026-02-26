@@ -1,8 +1,8 @@
 /**
  * AI Transaction Classifier — uses Claude Haiku to categorize bank transactions.
  * Called by classify-transactions cron job.
+ * Uses fetch directly to avoid requiring @anthropic-ai/sdk package.
  */
-import Anthropic from "@anthropic-ai/sdk";
 
 export type TransactionCategory =
   | "SALARIES"
@@ -35,23 +35,12 @@ const CATEGORY_DESCRIPTIONS: Record<TransactionCategory, string> = {
   OTHER: "אחר, לא ברור",
 };
 
-let client: Anthropic | null = null;
-
-function getClient(): Anthropic | null {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  if (!client) client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  return client;
-}
-
 export async function classifyTransaction(
   description: string,
   amount: number,
   direction: "CREDIT" | "DEBIT"
 ): Promise<{ category: TransactionCategory; confidence: number; reasoning: string }> {
-  const ai = getClient();
-
-  // Fallback: simple rule-based classification
-  if (!ai) {
+  if (!process.env.ANTHROPIC_API_KEY) {
     return ruleBasedClassify(description, direction);
   }
 
@@ -60,13 +49,20 @@ export async function classifyTransaction(
     .join("\n");
 
   try {
-    const msg = await ai.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 200,
-      messages: [
-        {
-          role: "user",
-          content: `אתה מסווג עסקאות בנק לעמותה ישראלית.
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 200,
+        messages: [
+          {
+            role: "user",
+            content: `אתה מסווג עסקאות בנק לעמותה ישראלית.
 
 עסקה:
 - תיאור: "${description}"
@@ -78,27 +74,31 @@ ${categoriesText}
 
 ענה בפורמט JSON בלבד:
 {"category": "CATEGORY_NAME", "confidence": 0-100, "reasoning": "הסבר קצר"}`,
-        },
-      ],
+          },
+        ],
+      }),
     });
 
-    const text = msg.content[0].type === "text" ? msg.content[0].text : "";
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      if (parsed.category && CATEGORY_DESCRIPTIONS[parsed.category as TransactionCategory]) {
-        return {
-          category: parsed.category as TransactionCategory,
-          confidence: Number(parsed.confidence) || 70,
-          reasoning: parsed.reasoning ?? "",
-        };
+    if (res.ok) {
+      const data = await res.json();
+      const text: string =
+        data?.content?.[0]?.type === "text" ? data.content[0].text : "";
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.category && CATEGORY_DESCRIPTIONS[parsed.category as TransactionCategory]) {
+          return {
+            category: parsed.category as TransactionCategory,
+            confidence: Number(parsed.confidence) || 70,
+            reasoning: parsed.reasoning ?? "",
+          };
+        }
       }
     }
   } catch (err) {
     console.error("[ai-classifier] Error:", err);
   }
 
-  // Fallback to rules
   return ruleBasedClassify(description, direction);
 }
 
@@ -118,7 +118,7 @@ function ruleBasedClassify(
   if (/דלק|רכב|נסיע|תחבורה|רכבת|אוטובוס/.test(lower)) return { category: "TRANSPORTATION", confidence: 85, reasoning: "תחבורה" };
   if (/פרסום|שיווק|דפוס|עיצוב/.test(lower)) return { category: "MARKETING", confidence: 82, reasoning: "פרסום/שיווק" };
   if (/ביטוח/.test(lower)) return { category: "INSURANCE", confidence: 90, reasoning: "ביטוח" };
-  if (/עורך דין|עו\"ד|רואה חשבון|יעוץ|ייעוץ/.test(lower)) return { category: "PROFESSIONAL_SERVICES", confidence: 85, reasoning: "שירות מקצועי" };
+  if (/עורך דין|עו"ד|רואה חשבון|יעוץ|ייעוץ/.test(lower)) return { category: "PROFESSIONAL_SERVICES", confidence: 85, reasoning: "שירות מקצועי" };
   if (/תיקון|שיפוץ|תחזוקה|ניקיון/.test(lower)) return { category: "MAINTENANCE", confidence: 80, reasoning: "תחזוקה" };
   if (/ציוד|מחשב|סמארטפון|מדפסת/.test(lower)) return { category: "SUPPLIES", confidence: 78, reasoning: "ציוד" };
   if (/פעילות|אירוע|קורס|סדנה|הרצאה/.test(lower)) return { category: "ACTIVITIES", confidence: 82, reasoning: "פעילות" };
