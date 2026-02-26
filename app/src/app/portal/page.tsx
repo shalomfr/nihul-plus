@@ -120,6 +120,8 @@ const QUICK_ACTIONS = [
   { href: "/portal/institutions", icon: Building2, label: "מוסדות", color: "#0891b2", bg: "#ecfeff" },
   { href: "/portal/documents", icon: FileText, label: "מסמכים", color: "#1e293b", bg: "#f8f9fc" },
   { href: "/portal/banking", icon: Landmark, label: "בנק", color: "#16a34a", bg: "#f0fdf4" },
+  { href: "/portal/status", icon: Shield, label: "ניהול תקין", color: "#dc2626", bg: "#fef2f2" },
+  { href: "/portal/calendar", icon: Calendar, label: "לוח שנה", color: "#9333ea", bg: "#faf5ff" },
   { href: "/portal/contact", icon: MessageCircle, label: "פנה למלווה", color: "#d97706", bg: "#fffbeb" },
 ];
 
