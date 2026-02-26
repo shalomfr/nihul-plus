@@ -72,7 +72,7 @@ export async function GET(req: Request) {
     expensesByCategory,
     monthlyIncome,
     compliance: complianceItems.map(c => ({
-      itemName: c.itemName,
+      itemName: c.name,
       dueDate: c.dueDate,
       status: c.status,
     })),
