@@ -88,24 +88,80 @@ export async function cleanupSession(sessionId: string) {
   }
 }
 
-// ── Launch Puppeteer (same pattern as bank-scraper.ts) ────────────────────────
+// ── Realistic User-Agent (Chrome 131 on Windows 10) ─────────────────────────
+const REAL_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+// ── Launch Puppeteer with stealth anti-detection ────────────────────────────
 async function launchBrowser(): Promise<{ browser: Browser; page: Page }> {
-  const [chromiumModule, puppeteerModule] = await Promise.all([
+  const [chromiumModule, puppeteerExtraModule, stealthModule] = await Promise.all([
     import("@sparticuz/chromium"),
-    import("puppeteer-core"),
+    import("puppeteer-extra"),
+    import("puppeteer-extra-plugin-stealth"),
   ]);
   const chromium = chromiumModule.default;
-  const puppeteer = puppeteerModule.default;
+  const puppeteer = puppeteerExtraModule.default;
+  const StealthPlugin = stealthModule.default;
+
+  // Apply stealth plugin (hides webdriver, chrome.runtime, plugins, etc.)
+  puppeteer.use(StealthPlugin());
 
   const browser = await puppeteer.launch({
     executablePath: await chromium.executablePath(),
-    args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+    args: [
+      ...chromium.args,
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      // Anti-detection flags
+      "--disable-blink-features=AutomationControlled",
+      "--disable-features=IsolateOrigins,site-per-process",
+      // Hebrew font rendering on Linux
+      "--lang=he-IL",
+      "--font-render-hinting=none",
+    ],
     headless: true,
     defaultViewport: { width: 1280, height: 900 },
     timeout: 60_000,
   });
 
   const page = await browser.newPage();
+
+  // Set realistic user-agent (removes "HeadlessChrome" marker)
+  await page.setUserAgent(REAL_USER_AGENT);
+
+  // Set Hebrew locale headers
+  await page.setExtraHTTPHeaders({
+    "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
+  });
+
+  // Override navigator.webdriver = false (belt & suspenders with stealth)
+  await page.evaluateOnNewDocument(() => {
+    Object.defineProperty(navigator, "webdriver", { get: () => false });
+    // Remove chrome.runtime to avoid detection
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    if (w.chrome) {
+      w.chrome.runtime = undefined;
+    }
+    // Override permissions query
+    const origQuery = window.navigator.permissions.query.bind(window.navigator.permissions);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    window.navigator.permissions.query = (params: any) => {
+      if (params.name === "notifications") {
+        return Promise.resolve({ state: "denied", onchange: null } as PermissionStatus);
+      }
+      return origQuery(params);
+    };
+    // Set plugins length > 0 (real browsers have plugins)
+    Object.defineProperty(navigator, "plugins", {
+      get: () => [1, 2, 3, 4, 5],
+    });
+    // Set languages
+    Object.defineProperty(navigator, "languages", {
+      get: () => ["he-IL", "he", "en-US", "en"],
+    });
+  });
+
   await page.setDefaultTimeout(30_000);
   await page.setDefaultNavigationTimeout(60_000);
 
