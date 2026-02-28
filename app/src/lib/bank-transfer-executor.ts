@@ -155,190 +155,262 @@ interface BankExecutor {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ── Bank Hapoalim (בנק הפועלים) ─────────────────────────────────────────────
-// Based on real site flow documented from login.bankhapoalim.co.il
+//
+// VERIFIED TECHNICAL DETAILS (Angular 19.2.14, Kite design system):
 //
 // Login page: login.bankhapoalim.co.il/ng-portals/auth/he/
-//   Fields: "קוד משתמש" (userCode), "סיסמה" (password)
-//   Button: "כניסה" (red button)
+//   Root component: <auth-root> → <auth-rb-login>
+//   #userCode  (formcontrolname="userCode", type="text", class="form-control user-code-ctrl")
+//   #password  (formcontrolname="password", type="text"(!), class="password-astrix")
+//   .login-btn (button.red-coloring-btn type="submit")
 //
-// After login: account selector dropdown (e.g. 655-193393, 655-379039)
+// Post-login success URLs:
+//   /portalserver/HomePage
+//   /ng-portals-bt/rb/he/homepage
+//   /ng-portals/rb/he/homepage
+//
+// Account selector: Angular component (poalim-accounts-select)
+//   API: GET /ServerServices/general/accounts
+//   Format: {bankNumber}-{branchNumber}-{accountNumber} e.g. "12-655-193393"
+//   Display format in dropdown: "655-193393"
 //
 // Transfer page: login.bankhapoalim.co.il/ng-portals/rb/he/current-account/transfer
 //   3-step wizard: 1.פרטי העברה  2.אישור  3.סיום
-//   Form fields: למי (לאחר/בין חשבונותיי), שם בעל החשבון, בנק, סניף, מס' חשבון, סכום, תאריך, סיבה
-//
-// Confirmation page (Step 2):
-//   Shows summary: amount, from/to accounts, date
-//   Button: "אישור העברה" → triggers SMS OTP
+//   Uses poalim-mm-field Angular components with formcontrolname attributes
+//   Submit buttons use class: red-coloring-btn
 //
 // OTP dialog:
-//   Title: "היקן הוראה"
-//   Text: "שלחנו לך קוד אימות ב-SMS למספר 054-******8"
-//   Input: "מה הקוד שקיבלת?"
-//   Button: "להמשך" (red)
-//   Fallback: phone call option
+//   SMS sent to registered phone
+//   enableWebOtp: false, enableWhatsappOtp: false
+//   Input: formcontrolname="otpCode" or #otpCode
+//   Submit: button.red-coloring-btn
 //
-// Success (Step 3): "סיום"
+// Security: Imperva Incapsula + Dynatrace + XSRF token + Clarisite + Arcot
+// Session timeout: 15 minutes (bnhpApp.keys.defaultSessionTimeout)
 // ══════════════════════════════════════════════════════════════════════════════
 class HapoalimExecutor implements BankExecutor {
   private readonly LOGIN_URL = "https://login.bankhapoalim.co.il/ng-portals/auth/he/";
   private readonly TRANSFER_URL = "https://login.bankhapoalim.co.il/ng-portals/rb/he/current-account/transfer";
 
+  // ── Helper: set value on Angular reactive form input ─────────────────────
+  // Angular inputs won't update the model if you just set .value.
+  // We need to dispatch the right events so Angular picks up the change.
+  private async angularType(page: Page, selector: string, value: string) {
+    await page.evaluate((sel: string) => {
+      const el = document.querySelector(sel) as HTMLInputElement;
+      if (el) {
+        el.focus();
+        el.value = "";
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    }, selector);
+    await page.type(selector, value, { delay: 40 });
+    // Trigger Angular change detection
+    await page.evaluate((sel: string) => {
+      const el = document.querySelector(sel) as HTMLInputElement;
+      if (el) {
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        el.dispatchEvent(new Event("blur", { bubbles: true }));
+      }
+    }, selector);
+  }
+
+  // ── Helper: wait for Angular to stabilize ────────────────────────────────
+  private async waitForAngular(page: Page, maxMs = 5000) {
+    await page.evaluate((timeout: number) => {
+      return new Promise<void>((resolve) => {
+        const deadline = Date.now() + timeout;
+        const check = () => {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const testabilities = (window as any).getAllAngularTestabilities?.();
+            if (testabilities?.[0]?.isStable()) { resolve(); return; }
+          } catch { /* not Angular or not ready */ }
+          if (Date.now() > deadline) { resolve(); return; }
+          setTimeout(check, 200);
+        };
+        check();
+      });
+    }, maxMs);
+  }
+
+  // ── Helper: dump all form inputs for debugging ───────────────────────────
+  private async dumpFormInputs(page: Page) {
+    const inputs = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll("input, select, textarea")).map((el) => ({
+        tag: el.tagName,
+        id: el.id,
+        fcn: el.getAttribute("formcontrolname"),
+        name: el.getAttribute("name"),
+        type: (el as HTMLInputElement).type,
+        placeholder: (el as HTMLInputElement).placeholder,
+        cls: el.className.substring(0, 60),
+        visible: el.getBoundingClientRect().height > 0,
+      }));
+    });
+    console.log("[hapoalim] Form inputs on page:", JSON.stringify(inputs, null, 2));
+    return inputs;
+  }
+
   async login(page: Page, credentials: Record<string, string>) {
     console.log("[hapoalim] Navigating to login page...");
     await page.goto(this.LOGIN_URL, { waitUntil: "networkidle2", timeout: 60_000 });
 
-    // Wait for login form — "קוד משתמש" and "סיסמה" fields
-    const userCodeSelectors = [
-      'input[formcontrolname="userCode"]',
-      'input[name="userCode"]',
-      'input[id="userCode"]',
-      'input[placeholder*="קוד משתמש"]',
-      'input[type="text"]',
-    ];
-    const userCodeSel = await waitForAny(page, userCodeSelectors, 20_000);
-    if (!userCodeSel) throw new Error("לא נמצא שדה קוד משתמש בדף ההתחברות");
+    // VERIFIED: Angular app with #userCode and #password
+    await page.waitForSelector("#userCode", { visible: true, timeout: 20_000 });
+    console.log("[hapoalim] Login form loaded");
 
-    console.log("[hapoalim] Filling login credentials...");
     const userCode = credentials.userCode ?? credentials.username ?? "";
     const password = credentials.password ?? "";
 
-    // Clear and type user code
-    await page.click(userCodeSel);
-    await page.evaluate((sel: string) => {
-      const el = document.querySelector(sel) as HTMLInputElement;
-      if (el) el.value = "";
-    }, userCodeSel);
-    await page.type(userCodeSel, userCode, { delay: 50 });
+    // Clear and type user code (VERIFIED: formcontrolname="userCode", id="userCode")
+    await this.angularType(page, "#userCode", userCode);
 
-    // Find and fill password field
-    const passwordSelectors = [
-      'input[formcontrolname="password"]',
-      'input[name="password"]',
-      'input[id="password"]',
-      'input[type="password"]',
-    ];
-    const passwordSel = await waitForAny(page, passwordSelectors, 5_000);
-    if (!passwordSel) throw new Error("לא נמצא שדה סיסמה בדף ההתחברות");
+    // Type password (VERIFIED: formcontrolname="password", id="password")
+    // NOTE: password field is type="text" with CSS class "password-astrix" for masking
+    await page.waitForSelector("#password", { visible: true, timeout: 5_000 });
+    await this.angularType(page, "#password", password);
 
-    await page.click(passwordSel);
-    await page.type(passwordSel, password, { delay: 50 });
+    // Click login (VERIFIED: button.login-btn.red-coloring-btn type="submit")
+    console.log("[hapoalim] Clicking login button...");
+    await page.click(".login-btn");
 
-    // Click the "כניסה" (login) button — red button
-    const loginBtnSelectors = [
-      'button[type="submit"]',
-      'button.login-btn',
-      'button[class*="login"]',
-      'button[class*="submit"]',
-    ];
-    const loginBtn = await waitForAny(page, loginBtnSelectors, 5_000);
-    if (loginBtn) {
-      await page.click(loginBtn);
-    } else {
-      // Fallback: find button with "כניסה" text
-      await page.evaluate(() => {
-        const buttons = Array.from(document.querySelectorAll("button, input[type=submit]"));
-        const btn = buttons.find((b) => /כניסה/i.test(b.textContent ?? "")) as HTMLElement | undefined;
-        if (btn) btn.click();
-      });
+    // Wait for redirect — bank redirects to homepage on success
+    console.log("[hapoalim] Waiting for login redirect...");
+    await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60_000 }).catch(() => {});
+    await this.waitForAngular(page);
+    await new Promise((r) => setTimeout(r, 2000));
+
+    // Check for login failure (redirected back to auth page)
+    const currentUrl: string = await page.url();
+    if (currentUrl.includes("/auth/") && currentUrl.includes("errorcode")) {
+      throw new Error("ההתחברות נכשלה — קוד משתמש או סיסמה שגויים");
     }
-
-    console.log("[hapoalim] Waiting for login to complete...");
-    await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60_000 }).catch(() => {
-      // Some SPAs don't trigger a full navigation
-    });
-    // Extra wait for SPA to settle
-    await new Promise((r) => setTimeout(r, 3000));
-
-    // Verify we're logged in
-    const pageContent: string = await page.evaluate(() => document.body?.innerText ?? "");
-    if (pageContent.includes("קוד משתמש") && pageContent.includes("סיסמה") && !pageContent.includes("שלום")) {
+    if (currentUrl.includes("AUTHENTICATE/LOGON")) {
       throw new Error("ההתחברות נכשלה — בדוק קוד משתמש וסיסמה");
     }
-    console.log("[hapoalim] Login successful");
+
+    // Verify we reached homepage
+    const onHomepage = currentUrl.includes("homepage") || currentUrl.includes("HomePage");
+    if (!onHomepage) {
+      // Could be change-password or other intermediate page
+      const bodyText: string = await page.evaluate(() => document.body?.innerText ?? "");
+      if (bodyText.includes("שינוי סיסמה") || bodyText.includes("סיסמה חדשה")) {
+        throw new Error("הבנק דורש שינוי סיסמה — היכנס לאתר הבנק ישירות כדי לשנות");
+      }
+    }
+    console.log("[hapoalim] Login successful, URL:", currentUrl);
   }
 
   async selectAccount(page: Page, accountNumber: string | null) {
     if (!accountNumber) return;
 
-    // The account selector is a dropdown at the top of the page
-    // It shows the current account (e.g. "655-193393") and clicking opens a list
-    // with all accounts (e.g. "655-193393", "655-379039")
+    // The account selector is on the transfer page (after navigation)
+    // Format in our DB could be "193393" or "655-193393"
+    // The bank displays accounts as "655-193393" in the dropdown
     console.log(`[hapoalim] Selecting account ${accountNumber}...`);
 
     try {
       await new Promise((r) => setTimeout(r, 2000));
 
-      // Check if we're already on the correct account
-      const alreadySelected = await page.evaluate((acct: string) => {
-        // Look for the currently displayed account number in the selector area
-        const selectors = document.querySelectorAll('[class*="account"], [class*="select"], [role="combobox"], [role="listbox"]');
-        for (const el of selectors) {
-          if ((el.textContent ?? "").includes(acct)) return true;
+      // First, check what account is currently selected and dump info
+      const currentAccount = await page.evaluate(() => {
+        // Look for the account selector component
+        const selectors = [
+          "poalim-accounts-select",
+          ".accounts-select",
+          '[class*="account-select"]',
+          '[class*="account-switch"]',
+        ];
+        for (const sel of selectors) {
+          const el = document.querySelector(sel);
+          if (el) return { found: true, text: (el.textContent ?? "").trim(), selector: sel };
         }
-        // Also check if any highlighted/active/checked item contains our account
-        const checked = document.querySelector('[class*="active"], [class*="selected"], [aria-selected="true"]');
-        if (checked && (checked.textContent ?? "").includes(acct)) return true;
-        return false;
-      }, accountNumber);
+        // Fallback: find any element showing account pattern XXX-XXXXXX
+        const all = Array.from(document.querySelectorAll("*"));
+        for (const el of all) {
+          if (el.children.length > 3) continue; // Only leaf-ish elements
+          const text = (el.textContent ?? "").trim();
+          if (/^\d{3}-\d{4,6}$/.test(text)) {
+            return { found: true, text, selector: "pattern-match" };
+          }
+        }
+        return { found: false, text: "", selector: "" };
+      });
 
-      if (alreadySelected) {
+      console.log(`[hapoalim] Current account display: ${JSON.stringify(currentAccount)}`);
+
+      // Check if already on correct account
+      if (currentAccount.found && currentAccount.text.includes(accountNumber)) {
         console.log(`[hapoalim] Already on correct account ${accountNumber}`);
         return;
       }
 
-      // Step 1: Find and click the account dropdown/selector to open it
-      // The dropdown trigger could be a button, div, or clickable area showing the current account
+      // Step 1: Click the account selector to open dropdown
       console.log("[hapoalim] Opening account dropdown...");
-      await page.evaluate(() => {
-        // Look for the account selector dropdown trigger
-        // It typically shows the current account number and has a dropdown arrow
-        const candidates = Array.from(document.querySelectorAll(
-          'button, [role="combobox"], [role="button"], [class*="dropdown"], [class*="select"], [class*="account-switch"], [class*="account-select"]'
-        ));
-        // Find one that contains an account number pattern (digits-digits)
-        const trigger = candidates.find((el) => /\d{3}-\d{4,6}/.test(el.textContent ?? ""));
-        if (trigger) {
+      const opened = await page.evaluate(() => {
+        // Try Angular component first
+        const component = document.querySelector("poalim-accounts-select, .accounts-select, [class*='account-select']");
+        if (component) {
+          // Look for the clickable trigger inside
+          const trigger = component.querySelector("button, [role='combobox'], [role='button'], .dropdown-toggle, [class*='trigger']")
+            ?? component;
           (trigger as HTMLElement).click();
-          return;
+          return true;
         }
-        // Fallback: look for any clickable element with "בחר חשבון" or "חשבון" text
-        const all = Array.from(document.querySelectorAll("button, a, div[role='button'], span"));
-        const acctBtn = all.find((el) =>
-          /בחר חשבון|חיפוש חשבון|חשבון/.test(el.textContent ?? "") &&
-          el.getBoundingClientRect().width > 0
-        );
-        if (acctBtn) (acctBtn as HTMLElement).click();
+        // Try finding any element with account number pattern
+        const elements = Array.from(document.querySelectorAll("button, div[role='button'], [role='combobox'], a"));
+        const acctEl = elements.find((el) => /\d{3}-\d{4,6}/.test(el.textContent ?? ""));
+        if (acctEl) {
+          (acctEl as HTMLElement).click();
+          return true;
+        }
+        // Try "בחר חשבון" text
+        const allEls = Array.from(document.querySelectorAll("button, a, span, div"));
+        const chooser = allEls.find((el) => {
+          const t = (el.textContent ?? "").trim();
+          return (t === "בחר חשבון" || t === "חיפוש חשבון") && el.getBoundingClientRect().width > 0;
+        });
+        if (chooser) { (chooser as HTMLElement).click(); return true; }
+        return false;
       });
 
-      // Wait for dropdown to open
-      await new Promise((r) => setTimeout(r, 1500));
+      if (!opened) {
+        console.warn("[hapoalim] Could not find account selector");
+        return;
+      }
 
-      // Step 2: Click the target account in the dropdown list
-      console.log(`[hapoalim] Clicking account ${accountNumber} in dropdown...`);
+      // Wait for dropdown options to render
+      await new Promise((r) => setTimeout(r, 1500));
+      await this.waitForAngular(page);
+
+      // Step 2: Click the target account
+      console.log(`[hapoalim] Clicking target account ${accountNumber}...`);
       const clicked = await page.evaluate((acct: string) => {
-        // Look through all visible elements for the account number
-        const elements = Array.from(document.querySelectorAll(
-          'li, div[role="option"], a, button, span, div'
+        // Look for dropdown options containing our account number
+        const candidates = Array.from(document.querySelectorAll(
+          'li, [role="option"], [class*="option"], [class*="account-item"], a, button, div'
         ));
-        // Find the one containing our account number that's visible and clickable
-        for (const el of elements) {
-          const text = el.textContent ?? "";
+        for (const el of candidates) {
+          const text = (el.textContent ?? "").trim();
           const rect = el.getBoundingClientRect();
-          if (text.includes(acct) && rect.width > 0 && rect.height > 0 && rect.height < 100) {
+          // Must contain our account number, be visible, and be reasonably sized (not the whole page)
+          if (text.includes(acct) && rect.width > 50 && rect.height > 10 && rect.height < 80) {
             (el as HTMLElement).click();
-            return true;
+            return { clicked: true, text };
           }
         }
-        return false;
+        return { clicked: false, text: "" };
       }, accountNumber);
 
-      if (clicked) {
-        console.log(`[hapoalim] Selected account ${accountNumber}`);
+      if (clicked.clicked) {
+        console.log(`[hapoalim] Clicked account: "${clicked.text}"`);
         // Wait for page to reload with new account data
         await new Promise((r) => setTimeout(r, 3000));
+        await this.waitForAngular(page);
       } else {
-        console.warn(`[hapoalim] Could not find account ${accountNumber} in dropdown`);
+        console.warn(`[hapoalim] Account ${accountNumber} not found in dropdown`);
       }
     } catch (err) {
       console.warn("[hapoalim] Account selection error:", err);
@@ -346,205 +418,241 @@ class HapoalimExecutor implements BankExecutor {
   }
 
   async navigateToTransferForm(page: Page) {
-    console.log("[hapoalim] Navigating to transfer form...");
+    console.log("[hapoalim] Navigating to transfer page...");
 
     // Direct navigation to transfer page
     await page.goto(this.TRANSFER_URL, { waitUntil: "networkidle2", timeout: 30_000 }).catch(() => {});
-    await new Promise((r) => setTimeout(r, 3000));
+    await this.waitForAngular(page);
+    await new Promise((r) => setTimeout(r, 2000));
 
     // Verify we're on the transfer page
     const isTransferPage = await page.evaluate(() => {
       const text = document.body?.innerText ?? "";
-      return text.includes("העברה רגילה") || text.includes("פרטי העברה") || text.includes("למי") || text.includes("כמה");
+      return (
+        text.includes("העברה רגילה") ||
+        text.includes("פרטי העברה") ||
+        text.includes("למי ברצונך") ||
+        text.includes("כמה") ||
+        text.includes("העברת כספים")
+      );
     });
 
     if (!isTransferPage) {
-      // Try clicking "העברת כסף" from the menu
-      console.log("[hapoalim] Direct URL didn't work, trying menu navigation...");
+      // Try menu navigation via "העברת כסף" link
+      console.log("[hapoalim] Direct URL didn't work, trying menu...");
       await page.evaluate(() => {
-        const links = Array.from(document.querySelectorAll("a, button, div[role='button']"));
+        const links = Array.from(document.querySelectorAll("a, button, div[role='button'], kite-button"));
         const transferLink = links.find((el) =>
           /העברת כסף|העברה רגילה/i.test(el.textContent ?? "")
         ) as HTMLElement | undefined;
         if (transferLink) transferLink.click();
       });
       await new Promise((r) => setTimeout(r, 3000));
+      await this.waitForAngular(page);
     }
 
+    // Dump form inputs for debugging
+    await this.dumpFormInputs(page);
     console.log("[hapoalim] On transfer form page");
   }
 
   async fillAndSubmitForm(page: Page, transfer: TransferData) {
     console.log("[hapoalim] Filling transfer form...");
 
-    // Ensure "לאחר" (to another person) tab is selected
+    // Make sure "לאחר" (to another) tab is selected
     await page.evaluate(() => {
-      const tabs = Array.from(document.querySelectorAll("button, a, div[role='tab'], label, span"));
-      const toOtherTab = tabs.find((el) => /לאחר/i.test(el.textContent ?? "")) as HTMLElement | undefined;
+      const tabs = Array.from(document.querySelectorAll("button, a, [role='tab'], label, span, kite-button"));
+      const toOtherTab = tabs.find((el) => {
+        const t = (el.textContent ?? "").trim();
+        return t === "לאחר" || t.includes("לאחר");
+      }) as HTMLElement | undefined;
       if (toOtherTab) toOtherTab.click();
     });
     await new Promise((r) => setTimeout(r, 1000));
+    await this.waitForAngular(page);
 
-    // Fill recipient name (שם בעל החשבון)
+    // ── Fill recipient name (שם בעל החשבון) ────────────────────────────────
     if (transfer.toExternalName) {
-      const nameSelectors = [
-        'input[formcontrolname*="name"]',
-        'input[name*="beneficiary"]',
-        'input[name*="name"]',
-        'input[placeholder*="שם"]',
-        'input[aria-label*="שם"]',
-      ];
-      const nameSel = await waitForAny(page, nameSelectors, 5_000);
+      console.log(`[hapoalim] Filling name: ${transfer.toExternalName}`);
+      const nameSel = await waitForAny(page, [
+        '[formcontrolname="beneficiaryName"]', '#beneficiaryName',
+        '[formcontrolname="accountOwnerName"]', '#accountOwnerName',
+        'input[formcontrolname*="name" i]',
+      ], 5_000);
       if (nameSel) {
-        await page.click(nameSel);
-        await page.type(nameSel, transfer.toExternalName, { delay: 30 });
+        await this.angularType(page, nameSel, transfer.toExternalName);
       } else {
+        // Fallback: find by label
         await page.evaluate((name: string) => {
           const labels = Array.from(document.querySelectorAll("label"));
-          const label = labels.find((l) => /שם בעל החשבון|שם המוטב/i.test(l.textContent ?? ""));
+          const label = labels.find((l) => /שם בעל|שם המוטב/i.test(l.textContent ?? ""));
           if (label) {
-            const input = label.querySelector("input") ?? document.getElementById(label.getAttribute("for") ?? "");
-            if (input) { (input as HTMLInputElement).focus(); (input as HTMLInputElement).value = name; input.dispatchEvent(new Event("input", { bubbles: true })); }
+            const forId = label.getAttribute("for");
+            const input = (forId ? document.getElementById(forId) : null) ?? label.closest("poalim-mm-field")?.querySelector("input");
+            if (input) {
+              (input as HTMLInputElement).focus();
+              (input as HTMLInputElement).value = name;
+              input.dispatchEvent(new Event("input", { bubbles: true }));
+              input.dispatchEvent(new Event("change", { bubbles: true }));
+              input.dispatchEvent(new Event("blur", { bubbles: true }));
+            }
           }
         }, transfer.toExternalName);
       }
       await new Promise((r) => setTimeout(r, 500));
     }
 
-    // Fill bank code (בנק) — usually a dropdown
+    // ── Fill bank code (בנק) ───────────────────────────────────────────────
+    // This is likely a kite-autocomplete or poalim-mm-field with a dropdown
     if (transfer.toExternalBankCode) {
       console.log(`[hapoalim] Filling bank code: ${transfer.toExternalBankCode}`);
-      const bankSelectors = [
-        'select[formcontrolname*="bank"]',
-        'select[name*="bank"]',
-        'input[formcontrolname*="bank"]',
-        'input[name*="bank"]',
-        'input[placeholder*="בנק"]',
-        'input[aria-label*="בנק"]',
-      ];
-      const bankSel = await waitForAny(page, bankSelectors, 5_000);
+      const bankSel = await waitForAny(page, [
+        '[formcontrolname="bankCode"]', '#bankCode',
+        '[formcontrolname="bankNumber"]', '#bankNumber',
+        'select[formcontrolname*="bank" i]',
+        'input[formcontrolname*="bank" i]',
+      ], 5_000);
       if (bankSel) {
         const tagName = await page.evaluate((sel: string) => document.querySelector(sel)?.tagName, bankSel);
         if (tagName === "SELECT") {
           await page.select(bankSel, transfer.toExternalBankCode);
         } else {
-          await page.click(bankSel);
-          await page.type(bankSel, transfer.toExternalBankCode, { delay: 30 });
+          await this.angularType(page, bankSel, transfer.toExternalBankCode);
+          // If autocomplete, wait for dropdown and pick first option
+          await new Promise((r) => setTimeout(r, 800));
+          await page.evaluate(() => {
+            const option = document.querySelector('[role="option"], .autocomplete-option, [class*="option"]:not([class*="options"])');
+            if (option) (option as HTMLElement).click();
+          });
         }
       }
       await new Promise((r) => setTimeout(r, 500));
     }
 
-    // Fill branch number (סניף)
+    // ── Fill branch number (סניף) ──────────────────────────────────────────
     if (transfer.toExternalBranchNumber) {
       console.log(`[hapoalim] Filling branch: ${transfer.toExternalBranchNumber}`);
-      const branchSelectors = [
-        'input[formcontrolname*="branch"]',
-        'input[name*="branch"]',
-        'input[placeholder*="סניף"]',
-        'input[aria-label*="סניף"]',
-      ];
-      const branchSel = await waitForAny(page, branchSelectors, 5_000);
+      const branchSel = await waitForAny(page, [
+        '[formcontrolname="branchNumber"]', '#branchNumber',
+        '[formcontrolname="branch"]', '#branch',
+        'input[formcontrolname*="branch" i]',
+      ], 5_000);
       if (branchSel) {
-        await page.click(branchSel);
-        await page.type(branchSel, transfer.toExternalBranchNumber, { delay: 30 });
+        await this.angularType(page, branchSel, transfer.toExternalBranchNumber);
+        // Might trigger autocomplete
+        await new Promise((r) => setTimeout(r, 800));
+        await page.evaluate(() => {
+          const option = document.querySelector('[role="option"], .autocomplete-option');
+          if (option) (option as HTMLElement).click();
+        });
       }
       await new Promise((r) => setTimeout(r, 500));
     }
 
-    // Fill account number (מס' חשבון) — digits only
+    // ── Fill account number (מס' חשבון) — digits only ──────────────────────
     if (transfer.toExternalAccount) {
-      console.log(`[hapoalim] Filling account number: ${transfer.toExternalAccount}`);
-      const accountSelectors = [
-        'input[formcontrolname*="account"]',
-        'input[name*="account"]',
-        'input[placeholder*="חשבון"]',
-        'input[aria-label*="חשבון"]',
-      ];
-      const accountSel = await waitForAny(page, accountSelectors, 5_000);
-      if (accountSel) {
-        await page.click(accountSel);
-        await page.type(accountSel, transfer.toExternalAccount, { delay: 30 });
+      console.log(`[hapoalim] Filling account: ${transfer.toExternalAccount}`);
+      const acctSel = await waitForAny(page, [
+        '[formcontrolname="accountNumber"]', '#accountNumber',
+        '[formcontrolname="beneficiaryAccountNumber"]', '#beneficiaryAccountNumber',
+        'input[formcontrolname*="account" i]',
+      ], 5_000);
+      if (acctSel) {
+        await this.angularType(page, acctSel, transfer.toExternalAccount);
       }
       await new Promise((r) => setTimeout(r, 500));
     }
 
-    // Fill amount (כמה?)
+    // ── Fill amount (כמה?) ──────────────────────────────────────────────────
     console.log(`[hapoalim] Filling amount: ${transfer.amount}`);
-    const amountSelectors = [
-      'input[formcontrolname*="amount"]',
-      'input[formcontrolname*="sum"]',
-      'input[name*="amount"]',
-      'input[name*="sum"]',
-      'input[placeholder*="סכום"]',
-      'input[aria-label*="סכום"]',
-      'input[type="number"]',
-    ];
-    const amountSel = await waitForAny(page, amountSelectors, 5_000);
+    const amountSel = await waitForAny(page, [
+      '[formcontrolname="amount"]', '#amount',
+      '[formcontrolname="transferAmount"]', '#transferAmount',
+      '[formcontrolname="sum"]', '#sum',
+      'input[formcontrolname*="amount" i]',
+    ], 5_000);
     if (amountSel) {
-      await page.click(amountSel);
-      await page.evaluate((sel: string) => {
-        const el = document.querySelector(sel) as HTMLInputElement;
-        if (el) { el.value = ""; el.dispatchEvent(new Event("input", { bubbles: true })); }
-      }, amountSel);
-      await page.type(amountSel, transfer.amount.toString(), { delay: 30 });
+      await this.angularType(page, amountSel, transfer.amount.toString());
     }
     await new Promise((r) => setTimeout(r, 500));
 
-    // Fill reason (סיבה להעברה) — optional
+    // ── Fill reason (סיבה) — optional ──────────────────────────────────────
     if (transfer.purpose || transfer.description) {
       const reasonText = transfer.purpose || transfer.description || "";
-      const reasonSelectors = [
-        'input[formcontrolname*="reason"]',
-        'input[formcontrolname*="remark"]',
-        'input[name*="reason"]',
-        'textarea[formcontrolname*="reason"]',
-        'input[placeholder*="סיבה"]',
-        'textarea[placeholder*="סיבה"]',
-      ];
-      const reasonSel = await waitForAny(page, reasonSelectors, 3_000);
+      const reasonSel = await waitForAny(page, [
+        '[formcontrolname="transferReason"]', '#transferReason',
+        '[formcontrolname="remark"]', '#remark',
+        '[formcontrolname="reason"]',
+        'textarea[formcontrolname*="reason" i]',
+        'input[formcontrolname*="reason" i]',
+      ], 3_000);
       if (reasonSel) {
-        await page.click(reasonSel);
-        await page.type(reasonSel, reasonText, { delay: 30 });
+        await this.angularType(page, reasonSel, reasonText);
       }
     }
 
     await new Promise((r) => setTimeout(r, 1000));
 
-    // Click "המשך" / submit to go to confirmation page (Step 2 of wizard)
-    console.log("[hapoalim] Submitting form to confirmation...");
-    await page.evaluate(() => {
+    // ── Submit form → Step 2 confirmation ──────────────────────────────────
+    console.log("[hapoalim] Submitting form...");
+    // The submit button should be a red-coloring-btn (same as login)
+    const submitted = await page.evaluate(() => {
+      // Try the bank's standard red button first
+      const redBtn = document.querySelector("button.red-coloring-btn:not(.login-btn)") as HTMLElement;
+      if (redBtn && redBtn.getBoundingClientRect().height > 0) {
+        redBtn.click();
+        return "red-btn";
+      }
+      // Try kite-button
+      const kiteBtn = document.querySelector("kite-button button") as HTMLElement;
+      if (kiteBtn && kiteBtn.getBoundingClientRect().height > 0) {
+        kiteBtn.click();
+        return "kite-btn";
+      }
+      // Fallback: find by text
       const buttons = Array.from(document.querySelectorAll("button, a, input[type=submit]"));
       const nextBtn = buttons.find((b) =>
-        /המשך|הבא|לשלב הבא|העבר/i.test(b.textContent ?? "")
+        /המשך|הבא|לשלב הבא|העבר|שליחה/i.test(b.textContent ?? "") &&
+        b.getBoundingClientRect().height > 0
       ) as HTMLElement | undefined;
-      if (nextBtn) nextBtn.click();
+      if (nextBtn) { nextBtn.click(); return "text-match"; }
+      return "none";
     });
+    console.log(`[hapoalim] Submit method: ${submitted}`);
 
     // Wait for confirmation page
     await new Promise((r) => setTimeout(r, 3000));
-    console.log("[hapoalim] Should be on confirmation page now");
+    await this.waitForAngular(page);
+    console.log("[hapoalim] Should be on confirmation page");
   }
 
   async clickConfirmTransfer(page: Page) {
-    // Step 2 confirmation page — click "אישור העברה" → triggers OTP SMS
-    console.log("[hapoalim] Clicking 'אישור העברה'...");
+    console.log("[hapoalim] Clicking confirm transfer...");
 
+    // On Step 2, the confirm button is red-coloring-btn with text "אישור העברה"
     await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll("button, a, input[type=submit]"));
-      const confirmBtn = buttons.find((b) =>
-        /אישור העברה|אישור|אשר|בצע העברה/i.test(b.textContent ?? "")
+      // Primary: find the red confirm button
+      const redBtns = Array.from(document.querySelectorAll("button.red-coloring-btn"));
+      const confirmBtn = redBtns.find((b) =>
+        /אישור|אשר|בצע/i.test(b.textContent ?? "") && b.getBoundingClientRect().height > 0
       ) as HTMLElement | undefined;
-      if (confirmBtn) confirmBtn.click();
+      if (confirmBtn) { confirmBtn.click(); return; }
+
+      // Fallback: any button with confirm text
+      const allBtns = Array.from(document.querySelectorAll("button, kite-button, a"));
+      const btn = allBtns.find((b) =>
+        /אישור העברה|אישור|אשר|בצע העברה/i.test(b.textContent ?? "") && b.getBoundingClientRect().height > 0
+      ) as HTMLElement | undefined;
+      if (btn) btn.click();
     });
 
     // Wait for OTP dialog
-    await new Promise((r) => setTimeout(r, 3000));
-    console.log("[hapoalim] Confirm clicked, checking for OTP...");
+    await new Promise((r) => setTimeout(r, 4000));
+    await this.waitForAngular(page);
+    console.log("[hapoalim] Confirm clicked");
   }
 
   async hasOtpDialog(page: Page): Promise<boolean> {
-    // The OTP dialog contains: "שלחנו לך קוד אימות ב-SMS", "מה הקוד שקיבלת?"
     try {
       return await page.evaluate(() => {
         const text = document.body?.innerText ?? "";
@@ -553,8 +661,9 @@ class HapoalimExecutor implements BankExecutor {
           text.includes("שלחנו לך קוד") ||
           text.includes("מה הקוד שקיבלת") ||
           text.includes("מתקשרים אליך") ||
-          text.includes("היקן הוראה") ||
-          text.includes("SMS")
+          text.includes("הקלד כאן") ||
+          // OTP dialog element
+          !!document.querySelector('[formcontrolname="otpCode"], #otpCode, .otp-input, [class*="otp"]')
         );
       });
     } catch {
@@ -565,61 +674,73 @@ class HapoalimExecutor implements BankExecutor {
   async fillOtpAndSubmit(page: Page, otp: string) {
     console.log("[hapoalim] Filling OTP code...");
 
-    // OTP input in the modal dialog
-    const otpSelectors = [
-      'input[formcontrolname*="otp"]',
-      'input[formcontrolname*="code"]',
-      'input[formcontrolname*="sms"]',
-      'input[name*="otp"]',
-      'input[name*="code"]',
-      'input[placeholder*="קוד"]',
-      'input[aria-label*="קוד"]',
+    // Try specific OTP selectors first (Angular formcontrolname)
+    const otpSel = await waitForAny(page, [
+      '[formcontrolname="otpCode"]', '#otpCode',
+      '.otp-input', '[class*="otp"] input',
+      'input[formcontrolname*="otp" i]',
+      'input[formcontrolname*="code" i]',
       'input[type="tel"]',
-      'div[class*="modal"] input[type="text"]',
-      'div[class*="dialog"] input[type="text"]',
-      'div[class*="modal"] input[type="number"]',
-      'div[class*="dialog"] input[type="number"]',
-    ];
+      'input[inputmode="numeric"]',
+    ], 10_000);
 
-    const otpSel = await waitForAny(page, otpSelectors, 10_000);
     if (otpSel) {
-      await page.click(otpSel);
-      await page.evaluate((sel: string) => {
-        const el = document.querySelector(sel) as HTMLInputElement;
-        if (el) { el.value = ""; el.dispatchEvent(new Event("input", { bubbles: true })); }
-      }, otpSel);
-      await page.type(otpSel, otp, { delay: 50 });
+      await this.angularType(page, otpSel, otp);
     } else {
-      // Fallback: find any visible input in dialog
+      // Fallback: find any visible empty input in dialog/modal overlay
+      console.log("[hapoalim] OTP selector not found, trying fallback...");
       await page.evaluate((code: string) => {
+        // Look for dialog/modal containers first
+        const containers = document.querySelectorAll('[class*="dialog"], [class*="modal"], [class*="overlay"], [role="dialog"]');
+        for (const container of containers) {
+          const input = container.querySelector("input:not([type=hidden])") as HTMLInputElement;
+          if (input && input.getBoundingClientRect().height > 0) {
+            input.focus();
+            input.value = code;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+            return;
+          }
+        }
+        // Last resort: any visible input
         const inputs = Array.from(document.querySelectorAll("input:not([type=hidden])"));
-        const visibleInput = inputs.find((inp) => {
-          const rect = inp.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0;
-        }) as HTMLInputElement | undefined;
-        if (visibleInput) {
-          visibleInput.focus();
-          visibleInput.value = code;
-          visibleInput.dispatchEvent(new Event("input", { bubbles: true }));
-          visibleInput.dispatchEvent(new Event("change", { bubbles: true }));
+        const visible = inputs.filter((i) => i.getBoundingClientRect().height > 0);
+        const empty = visible.find((i) => !(i as HTMLInputElement).value) as HTMLInputElement | undefined;
+        if (empty) {
+          empty.focus();
+          empty.value = code;
+          empty.dispatchEvent(new Event("input", { bubbles: true }));
+          empty.dispatchEvent(new Event("change", { bubbles: true }));
         }
       }, otp);
     }
 
     await new Promise((r) => setTimeout(r, 500));
 
-    // Click "להמשך" (Continue) — red button in OTP dialog
-    console.log("[hapoalim] Clicking OTP submit...");
+    // Click submit — red button in OTP dialog with "להמשך" text
+    console.log("[hapoalim] Submitting OTP...");
     await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll("button, a, input[type=submit]"));
+      // Try red button in dialog
+      const dialogs = document.querySelectorAll('[class*="dialog"], [class*="modal"], [role="dialog"]');
+      for (const dialog of dialogs) {
+        const redBtn = dialog.querySelector("button.red-coloring-btn") as HTMLElement;
+        if (redBtn) { redBtn.click(); return; }
+        const btn = Array.from(dialog.querySelectorAll("button")).find((b) =>
+          /להמשך|המשך|אישור|שלח/i.test(b.textContent ?? "")
+        ) as HTMLElement | undefined;
+        if (btn) { btn.click(); return; }
+      }
+      // Fallback: any button with submit text
+      const buttons = Array.from(document.querySelectorAll("button"));
       const submitBtn = buttons.find((b) =>
-        /להמשך|המשך|אישור|אשר|שלח/i.test(b.textContent ?? "")
+        /להמשך|המשך|אישור|אשר|שלח/i.test(b.textContent ?? "") && b.getBoundingClientRect().height > 0
       ) as HTMLElement | undefined;
       if (submitBtn) submitBtn.click();
     });
 
-    // Wait for result
+    // Wait for bank to process
     await new Promise((r) => setTimeout(r, 5000));
+    await this.waitForAngular(page);
     console.log("[hapoalim] OTP submitted");
   }
 
@@ -628,17 +749,15 @@ class HapoalimExecutor implements BankExecutor {
     return await page.evaluate(() => {
       const text = document.body?.innerText ?? "";
       const url = window.location.href;
-      // Step 3 "סיום" (Done) of the wizard
       return (
         text.includes("בוצעה בהצלחה") ||
         text.includes("ההעברה בוצעה") ||
         text.includes("הפעולה בוצעה") ||
         text.includes("העברה בוצעה") ||
-        // Step 3 indicator
+        text.includes("סכום ההעברה חויב") ||
+        // Step 3 "סיום" without step 1 indicator
         (text.includes("סיום") && !text.includes("פרטי העברה")) ||
-        url.includes("success") ||
-        url.includes("receipt") ||
-        url.includes("done")
+        url.includes("success") || url.includes("receipt") || url.includes("done")
       );
     });
   }
