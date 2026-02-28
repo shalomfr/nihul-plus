@@ -1,20 +1,25 @@
 /**
+ * Bank Transfer Execute API — 3-step Puppeteer screenshot relay
+ *
  * POST /api/banking/transfers/[id]/execute
- *   → Starts a Puppeteer session: logs into bank, fills transfer form, returns screenshot
+ *   → Start: login, fill form, screenshot confirmation page
  *   Body: {}
- *   Returns: { sessionId, screenshot: base64, step: "confirm"|"otp", message }
+ *   Returns: { sessionId, screenshot, step:"confirm", message }
  *
  * PUT /api/banking/transfers/[id]/execute
- *   → Confirms the transfer in the bank, syncs, marks as COMPLETED
- *   Body: { sessionId, otp? }
- *   Returns: { success, screenshot?, message }
+ *   → Step forward in the flow
+ *   Body: { sessionId, action: "confirm" | "otp", otp?: string }
+ *
+ *   action="confirm" → clicks confirm button → returns { screenshot, step:"otp", message }
+ *   action="otp"     → submits OTP code → returns { success, screenshot, step:"success"|"error", message }
  */
 import { prisma } from "@/lib/prisma";
 import { requireManager, apiResponse, apiError, withErrorHandler } from "@/lib/api-helpers";
 import { decrypt } from "@/lib/encryption";
 import {
   startTransferExecution,
-  confirmTransfer,
+  confirmTransferStep,
+  submitOtp,
   type TransferData,
 } from "@/lib/bank-transfer-executor";
 import { syncBankData } from "@/lib/bank-scraper";
@@ -23,7 +28,6 @@ export const POST = withErrorHandler(async (_req: Request, { params }: { params:
   const user = await requireManager();
   const { id } = await params;
 
-  // Load transfer
   const transfer = await prisma.bankTransfer.findFirst({
     where: { id, organizationId: user.organizationId! },
     include: {
@@ -37,7 +41,6 @@ export const POST = withErrorHandler(async (_req: Request, { params }: { params:
   const bankName = transfer.fromAccount?.bankName ?? "";
   if (!bankName) return apiError("לא מוגדר חשבון מוצא", 400);
 
-  // Find the scraper connection for this bank
   const connection = await prisma.bankScraperConnection.findFirst({
     where: {
       organizationId: user.organizationId!,
@@ -53,7 +56,6 @@ export const POST = withErrorHandler(async (_req: Request, { params }: { params:
     );
   }
 
-  // Decrypt credentials
   let credentials: Record<string, string>;
   try {
     credentials = JSON.parse(decrypt(connection.encryptedCreds));
@@ -91,44 +93,60 @@ export const PUT = withErrorHandler(async (req: Request, { params }: { params: P
   const user = await requireManager();
   const { id } = await params;
   const body = await req.json();
-  const { sessionId, otp } = body as { sessionId: string; otp?: string };
+  const { sessionId, action, otp } = body as { sessionId: string; action?: "confirm" | "otp"; otp?: string };
 
   if (!sessionId) return apiError("חסר sessionId", 400);
 
-  // Verify transfer belongs to org
   const transfer = await prisma.bankTransfer.findFirst({
     where: { id, organizationId: user.organizationId! },
     include: { fromAccount: { select: { id: true } } },
   });
   if (!transfer) return apiError("העברה לא נמצאה", 404);
 
-  // Execute confirm in Puppeteer
-  const result = await confirmTransfer(sessionId, otp);
+  // Determine which step to execute
+  const effectiveAction = action ?? (otp ? "otp" : "confirm");
 
-  if (result.success) {
-    // Mark transfer as COMPLETED
-    await prisma.bankTransfer.update({
-      where: { id },
-      data: { status: "COMPLETED" },
-    });
+  if (effectiveAction === "confirm") {
+    // Step 2: Click confirm on bank's confirmation page → triggers OTP
+    const result = await confirmTransferStep(sessionId);
 
-    // Trigger bank sync to pick up the new transaction
-    if (transfer.fromAccount?.id) {
-      const bankAccount = await prisma.bankAccount.findFirst({
-        where: { id: transfer.fromAccountId ?? "" },
-      });
-      if (bankAccount) {
-        const conn = await prisma.bankScraperConnection.findFirst({
-          where: { organizationId: user.organizationId!, status: "ACTIVE" },
-        });
-        if (conn) {
-          void syncBankData(user.organizationId!, conn.id).catch((e) =>
-            console.error("[execute] post-transfer sync failed:", e)
-          );
-        }
-      }
+    if (result.step === "success" && result.success) {
+      await markCompleted(id, transfer.fromAccountId, user.organizationId!);
     }
+
+    return apiResponse(result);
   }
 
-  return apiResponse(result);
+  if (effectiveAction === "otp") {
+    if (!otp) return apiError("חסר קוד OTP", 400);
+
+    // Step 3: Submit OTP → complete transfer
+    const result = await submitOtp(sessionId, otp);
+
+    if (result.success) {
+      await markCompleted(id, transfer.fromAccountId, user.organizationId!);
+    }
+
+    return apiResponse(result);
+  }
+
+  return apiError(`פעולה לא מוכרת: ${effectiveAction}`, 400);
 });
+
+async function markCompleted(transferId: string, fromAccountId: string | null, orgId: string) {
+  await prisma.bankTransfer.update({
+    where: { id: transferId },
+    data: { status: "COMPLETED" },
+  });
+
+  if (fromAccountId) {
+    const conn = await prisma.bankScraperConnection.findFirst({
+      where: { organizationId: orgId, status: "ACTIVE" },
+    });
+    if (conn) {
+      void syncBankData(orgId, conn.id).catch((e) =>
+        console.error("[execute] post-transfer sync failed:", e)
+      );
+    }
+  }
+}
