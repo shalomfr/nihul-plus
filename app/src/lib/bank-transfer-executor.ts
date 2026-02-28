@@ -261,28 +261,87 @@ class HapoalimExecutor implements BankExecutor {
   async selectAccount(page: Page, accountNumber: string | null) {
     if (!accountNumber) return;
 
-    // After login, bank may show account selector (e.g. "655-193393", "655-379039")
-    console.log(`[hapoalim] Looking for account selector (${accountNumber})...`);
+    // The account selector is a dropdown at the top of the page
+    // It shows the current account (e.g. "655-193393") and clicking opens a list
+    // with all accounts (e.g. "655-193393", "655-379039")
+    console.log(`[hapoalim] Selecting account ${accountNumber}...`);
 
     try {
       await new Promise((r) => setTimeout(r, 2000));
 
-      const hasSelector = await page.evaluate((acct: string) => {
-        const elements = Array.from(document.querySelectorAll("button, a, div[role='option'], li, span"));
-        const match = elements.find((el) => (el.textContent ?? "").includes(acct));
-        if (match) {
-          (match as HTMLElement).click();
-          return true;
+      // Check if we're already on the correct account
+      const alreadySelected = await page.evaluate((acct: string) => {
+        // Look for the currently displayed account number in the selector area
+        const selectors = document.querySelectorAll('[class*="account"], [class*="select"], [role="combobox"], [role="listbox"]');
+        for (const el of selectors) {
+          if ((el.textContent ?? "").includes(acct)) return true;
+        }
+        // Also check if any highlighted/active/checked item contains our account
+        const checked = document.querySelector('[class*="active"], [class*="selected"], [aria-selected="true"]');
+        if (checked && (checked.textContent ?? "").includes(acct)) return true;
+        return false;
+      }, accountNumber);
+
+      if (alreadySelected) {
+        console.log(`[hapoalim] Already on correct account ${accountNumber}`);
+        return;
+      }
+
+      // Step 1: Find and click the account dropdown/selector to open it
+      // The dropdown trigger could be a button, div, or clickable area showing the current account
+      console.log("[hapoalim] Opening account dropdown...");
+      await page.evaluate(() => {
+        // Look for the account selector dropdown trigger
+        // It typically shows the current account number and has a dropdown arrow
+        const candidates = Array.from(document.querySelectorAll(
+          'button, [role="combobox"], [role="button"], [class*="dropdown"], [class*="select"], [class*="account-switch"], [class*="account-select"]'
+        ));
+        // Find one that contains an account number pattern (digits-digits)
+        const trigger = candidates.find((el) => /\d{3}-\d{4,6}/.test(el.textContent ?? ""));
+        if (trigger) {
+          (trigger as HTMLElement).click();
+          return;
+        }
+        // Fallback: look for any clickable element with "בחר חשבון" or "חשבון" text
+        const all = Array.from(document.querySelectorAll("button, a, div[role='button'], span"));
+        const acctBtn = all.find((el) =>
+          /בחר חשבון|חיפוש חשבון|חשבון/.test(el.textContent ?? "") &&
+          el.getBoundingClientRect().width > 0
+        );
+        if (acctBtn) (acctBtn as HTMLElement).click();
+      });
+
+      // Wait for dropdown to open
+      await new Promise((r) => setTimeout(r, 1500));
+
+      // Step 2: Click the target account in the dropdown list
+      console.log(`[hapoalim] Clicking account ${accountNumber} in dropdown...`);
+      const clicked = await page.evaluate((acct: string) => {
+        // Look through all visible elements for the account number
+        const elements = Array.from(document.querySelectorAll(
+          'li, div[role="option"], a, button, span, div'
+        ));
+        // Find the one containing our account number that's visible and clickable
+        for (const el of elements) {
+          const text = el.textContent ?? "";
+          const rect = el.getBoundingClientRect();
+          if (text.includes(acct) && rect.width > 0 && rect.height > 0 && rect.height < 100) {
+            (el as HTMLElement).click();
+            return true;
+          }
         }
         return false;
       }, accountNumber);
 
-      if (hasSelector) {
+      if (clicked) {
         console.log(`[hapoalim] Selected account ${accountNumber}`);
-        await new Promise((r) => setTimeout(r, 2000));
+        // Wait for page to reload with new account data
+        await new Promise((r) => setTimeout(r, 3000));
+      } else {
+        console.warn(`[hapoalim] Could not find account ${accountNumber} in dropdown`);
       }
-    } catch {
-      console.log("[hapoalim] No account selector found, continuing...");
+    } catch (err) {
+      console.warn("[hapoalim] Account selection error:", err);
     }
   }
 
@@ -632,8 +691,9 @@ export async function startTransferExecution(
 
   try {
     await executor.login(page, credentials);
-    await executor.selectAccount(page, transfer.fromAccountNumber);
     await executor.navigateToTransferForm(page);
+    // Account selector is on the transfer page itself — select after navigation
+    await executor.selectAccount(page, transfer.fromAccountNumber);
     await executor.fillAndSubmitForm(page, transfer);
 
     const img = await screenshot(page);
