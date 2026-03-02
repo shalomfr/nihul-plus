@@ -1,52 +1,56 @@
 /**
- * WhatsApp client via Twilio REST API.
- * Uses fetch — no SDK dependency required.
+ * WhatsApp client via external Baileys service on Render.
+ * The service runs separately and exposes REST API endpoints.
  */
 
-const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_FROM = process.env.TWILIO_WHATSAPP_FROM ?? "whatsapp:+14155238886";
+const WHATSAPP_URL = process.env.WHATSAPP_SERVICE_URL;
+const WHATSAPP_KEY = process.env.WHATSAPP_API_KEY;
 
-function isConfigured() {
-  return !!(TWILIO_SID && TWILIO_TOKEN);
+export function isWhatsAppConfigured() {
+  return !!(WHATSAPP_URL && WHATSAPP_KEY);
 }
 
 /**
  * Send a WhatsApp message to a phone number.
- * @param to Phone number in E.164 format e.g. +972501234567
- * @param body Message body (max ~1600 chars)
+ * @param phone Phone number e.g. "0501234567" or "+972501234567"
+ * @param message Message body
  */
-export async function sendWhatsApp(to: string, body: string): Promise<void> {
-  if (!isConfigured()) {
-    console.log(`[DEV WhatsApp] to: ${to}`);
-    console.log(`[DEV WhatsApp] body: ${body.slice(0, 200)}`);
+export async function sendWhatsApp(phone: string, message: string): Promise<void> {
+  if (!isWhatsAppConfigured()) {
+    console.log(`[DEV WhatsApp] to: ${phone}`);
+    console.log(`[DEV WhatsApp] body: ${message.slice(0, 200)}`);
     return;
   }
 
-  const toFormatted = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
-
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`;
-  const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString("base64");
-
-  const body_ = new URLSearchParams({
-    From: TWILIO_FROM,
-    To: toFormatted,
-    Body: body,
-  });
-
-  const res = await fetch(url, {
+  const res = await fetch(`${WHATSAPP_URL}/send`, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${auth}`,
-      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Type": "application/json",
+      apikey: WHATSAPP_KEY!,
     },
-    body: body_.toString(),
+    body: JSON.stringify({ phone, message }),
   });
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Twilio error ${res.status}: ${text}`);
+    throw new Error(`WhatsApp send error ${res.status}: ${text}`);
   }
+}
+
+/**
+ * Get WhatsApp service status (connected, qr_ready, disconnected, etc.)
+ */
+export async function getWhatsAppStatus() {
+  if (!isWhatsAppConfigured()) {
+    return { configured: false, status: "not_configured" as const };
+  }
+
+  const res = await fetch(`${WHATSAPP_URL}/status`, {
+    headers: { apikey: WHATSAPP_KEY! },
+    cache: "no-store",
+  });
+
+  return res.json();
 }
 
 /**
