@@ -78,10 +78,11 @@ function getSmartActions(item: ComplianceItem): SmartActionsConfig {
 
     case "TAX_APPROVALS":
       return {
-        headline: "אישור מרשות המסים",
-        tip: "שלח בקשה לחידוש האישור מרשות המסים. תבנית מייל מקצועית כבר מוכנה.",
+        headline: "אישורי מס — סעיף 46, מלכ\"ר, קבלות",
+        tip: "סעיף 46 מאפשר לתורמים זיכוי ממס של 35%. חידוש שנתי מותנה באישור ניהול תקין. הנפקת קבלות תרומה היא חובה חוקית.",
         actions: [
           { label: "📧 בקש חידוש סעיף 46", description: "מייל לרשות המסים", icon: "mail", href: "/portal/institutions?email=tax_section46_renewal" },
+          { label: "🧾 הנפק קבלות תרומה", description: "קבלות סעיף 46 לתורמים", icon: "docs", href: "/portal/invoices" },
           { label: "📊 דוח תרומה מישות זרה", description: "אם רלוונטי לארגונך", icon: "mail", href: "/portal/institutions?email=tax_foreign_donation_report" },
           { label: "📁 העלה אישור מרשות", description: "אחרי קבלת האישור", icon: "upload", href: "/portal/documents" },
         ],
@@ -119,21 +120,24 @@ function getSmartActions(item: ComplianceItem): SmartActionsConfig {
 
     case "GOVERNANCE":
       return {
-        headline: "דרוש פעולת ממשל",
-        tip: "כנס את חברי הועד לישיבה או הוסף פרוטוקול החלטה. ניתן לשלוח הזמנה ישירה.",
+        headline: "ממשל תקין — פרוטוקולים, ועד וביקורת",
+        tip: "כל ישיבת ועד חייבת פרוטוקול חתום הכולל: תאריך, משתתפים, סדר יום, תוצאות הצבעה, והחלטות. פרוטוקול שלא נחתם — לא תקף.",
         actions: [
           { label: "👥 זמן ישיבת ועד", description: "שלח הזמנה לחברי הועד", icon: "users", href: "/portal/board" },
-          { label: "📁 הוסף פרוטוקול", description: "העלה החלטה רשמית", icon: "upload", href: "/portal/documents" },
+          { label: "📁 הוסף פרוטוקול", description: "העלה פרוטוקול חתום", icon: "upload", href: "/portal/documents" },
+          { label: "📋 הצהרת ניגוד עניינים", description: "טופס הצהרה לחבר ועד", icon: "docs", href: "/portal/documents" },
           { label: "📅 תאם בלוח שנה", description: "הוסף ישיבה ליומן", icon: "docs", href: "/portal/calendar" },
         ],
       };
 
     case "EMPLOYEES_VOLUNTEERS":
       return {
-        headline: "רישום עובדים / מתנדבים",
-        tip: "עדכן את רשימת העובדים והמתנדבים כנדרש על פי רשם העמותות.",
+        headline: "עובדים, מתנדבים וקרובי משפחה",
+        tip: "בדוק את העסקת קרובי משפחה (עד 1/3 מהועד יכולים להיות קרובים). כל העסקת קרוב משפחה של חבר ועד מחייבת אישור מיוחד בפרוטוקול + שכר סביר.",
         actions: [
-          { label: "📁 העלה מסמך רלוונטי", description: "חוזה עבודה / הצהרה", icon: "upload", href: "/portal/documents" },
+          { label: "📋 בדוק קרובי משפחה", description: "בדיקת העסקת קרובים בעמותה", icon: "users", href: "/portal/board" },
+          { label: "📁 העלה הצהרת קרבה", description: "הצהרה חתומה מחבר ועד", icon: "upload", href: "/portal/documents" },
+          { label: "📁 העלה חוזה עבודה", description: "חוזה עובד / מתנדב", icon: "upload", href: "/portal/documents" },
           { label: "📧 שלח לרשם", description: "הגשת מסמכים לרשם", icon: "mail", href: "/portal/institutions?email=registrar_document_submission" },
         ],
       };
@@ -141,10 +145,11 @@ function getSmartActions(item: ComplianceItem): SmartActionsConfig {
     case "INSURANCE":
       return {
         headline: "כיסוי ביטוחי נדרש",
-        tip: "פנה לסוכן הביטוח לחידוש/הוצאת פוליסה, ואז העלה עותק לתיק.",
+        tip: "ביטוח מתנדבים הוא חובה חוקית. כמו כן מומלץ ביטוח D&O לחברי ועד, ביטוח רכוש, וביטוח צד שלישי לאירועים.",
         actions: [
           { label: "📞 פנה למלווה", description: "קבל הכוונה מהמלווה שלך", icon: "phone", href: "/portal/contact" },
-          { label: "📁 העלה פוליסה", description: "אחרי קבלת הפוליסה", icon: "upload", href: "/portal/documents" },
+          { label: "📁 העלה פוליסה", description: "ביטוח מתנדבים / D&O / רכוש", icon: "upload", href: "/portal/documents" },
+          { label: "📞 בקש הצעת מחיר", description: "פנה לסוכן ביטוח", icon: "phone", href: "/portal/contact" },
         ],
       };
 
