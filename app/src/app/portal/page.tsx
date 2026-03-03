@@ -24,6 +24,7 @@ import {
   Zap,
   Calculator,
   Receipt,
+  Settings,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { type ComplianceItem } from "@/lib/smart-actions";
@@ -132,6 +133,7 @@ const QUICK_ACTIONS = [
   { href: "/portal/accountant", icon: Calculator, label: "רואה חשבון", color: "#0f766e", bg: "#f0fdfa" },
   { href: "/portal/calendar", icon: Calendar, label: "לוח שנה", color: "#9333ea", bg: "#faf5ff" },
   { href: "/portal/contact", icon: MessageCircle, label: "פנה למלווה", color: "#d97706", bg: "#fffbeb" },
+  { href: "/portal/settings", icon: Settings, label: "הגדרות", color: "#475569", bg: "#f8fafc" },
 ];
 
 export default function PortalHomePage() {

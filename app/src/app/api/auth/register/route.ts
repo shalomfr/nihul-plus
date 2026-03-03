@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = error.errors[0]?.message ?? "נתונים לא תקינים";
+      const firstError = error.issues[0]?.message ?? "נתונים לא תקינים";
       return NextResponse.json(
         { success: false, error: firstError },
         { status: 400 }

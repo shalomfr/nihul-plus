@@ -424,14 +424,12 @@ export async function seedRegulatoryCalendar(organizationId: string): Promise<nu
   const now = new Date();
   const currentYear = now.getFullYear();
 
+  // Clear existing items so seed always repopulates fresh
+  await prisma.complianceItem.deleteMany({ where: { organizationId } });
+
   let created = 0;
 
   for (const item of ANNUAL_ITEMS) {
-    // Check for existing item by name
-    const existing = await prisma.complianceItem.findFirst({
-      where: { organizationId, name: item.name },
-    });
-    if (existing) continue;
 
     // Calculate this year's deadline
     let dueDate = new Date(currentYear, item.month - 1, item.day);
