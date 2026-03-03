@@ -34,8 +34,7 @@ export async function POST(
       success: true,
       data: { status: newStatus },
     });
-  } catch (error) {
-    console.error("Suspend error:", error);
+  } catch {
     return NextResponse.json({ success: false, error: "שגיאה" }, { status: 500 });
   }
 }

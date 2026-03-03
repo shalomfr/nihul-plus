@@ -305,17 +305,14 @@ class HapoalimExecutor implements BankExecutor {
         visible: el.getBoundingClientRect().height > 0,
       }));
     });
-    console.log("[hapoalim] Form inputs on page:", JSON.stringify(inputs, null, 2));
     return inputs;
   }
 
   async login(page: Page, credentials: Record<string, string>) {
-    console.log("[hapoalim] Navigating to login page...");
     await page.goto(this.LOGIN_URL, { waitUntil: "networkidle2", timeout: 60_000 });
 
     // VERIFIED: Angular app with #userCode and #password
     await page.waitForSelector("#userCode", { visible: true, timeout: 20_000 });
-    console.log("[hapoalim] Login form loaded");
 
     const userCode = credentials.userCode ?? credentials.username ?? "";
     const password = credentials.password ?? "";
@@ -328,12 +325,8 @@ class HapoalimExecutor implements BankExecutor {
     await page.waitForSelector("#password", { visible: true, timeout: 5_000 });
     await this.angularType(page, "#password", password);
 
-    // Click login (VERIFIED: button.login-btn.red-coloring-btn type="submit")
-    console.log("[hapoalim] Clicking login button...");
     await page.click(".login-btn");
 
-    // Wait for redirect — bank redirects to homepage on success
-    console.log("[hapoalim] Waiting for login redirect...");
     await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60_000 }).catch(() => {});
     await this.waitForAngular(page);
     await new Promise((r) => setTimeout(r, 2000));
@@ -356,16 +349,10 @@ class HapoalimExecutor implements BankExecutor {
         throw new Error("הבנק דורש שינוי סיסמה — היכנס לאתר הבנק ישירות כדי לשנות");
       }
     }
-    console.log("[hapoalim] Login successful, URL:", currentUrl);
   }
 
   async selectAccount(page: Page, accountNumber: string | null) {
     if (!accountNumber) return;
-
-    // The account selector is on the transfer page (after navigation)
-    // Format in our DB could be "193393" or "655-193393"
-    // The bank displays accounts as "655-193393" in the dropdown
-    console.log(`[hapoalim] Selecting account ${accountNumber}...`);
 
     try {
       await new Promise((r) => setTimeout(r, 2000));
@@ -395,16 +382,12 @@ class HapoalimExecutor implements BankExecutor {
         return { found: false, text: "", selector: "" };
       });
 
-      console.log(`[hapoalim] Current account display: ${JSON.stringify(currentAccount)}`);
 
       // Check if already on correct account
       if (currentAccount.found && currentAccount.text.includes(accountNumber)) {
-        console.log(`[hapoalim] Already on correct account ${accountNumber}`);
         return;
       }
 
-      // Step 1: Click the account selector to open dropdown
-      console.log("[hapoalim] Opening account dropdown...");
       const opened = await page.evaluate(() => {
         // Try Angular component first
         const component = document.querySelector("poalim-accounts-select, .accounts-select, [class*='account-select']");
@@ -433,7 +416,6 @@ class HapoalimExecutor implements BankExecutor {
       });
 
       if (!opened) {
-        console.warn("[hapoalim] Could not find account selector");
         return;
       }
 
@@ -441,8 +423,6 @@ class HapoalimExecutor implements BankExecutor {
       await new Promise((r) => setTimeout(r, 1500));
       await this.waitForAngular(page);
 
-      // Step 2: Click the target account
-      console.log(`[hapoalim] Clicking target account ${accountNumber}...`);
       const clicked = await page.evaluate((acct: string) => {
         // Look for dropdown options containing our account number
         const candidates = Array.from(document.querySelectorAll(
@@ -461,22 +441,15 @@ class HapoalimExecutor implements BankExecutor {
       }, accountNumber);
 
       if (clicked.clicked) {
-        console.log(`[hapoalim] Clicked account: "${clicked.text}"`);
-        // Wait for page to reload with new account data
         await new Promise((r) => setTimeout(r, 3000));
         await this.waitForAngular(page);
-      } else {
-        console.warn(`[hapoalim] Account ${accountNumber} not found in dropdown`);
       }
-    } catch (err) {
-      console.warn("[hapoalim] Account selection error:", err);
+    } catch {
+      // account selection error — continue with default account
     }
   }
 
   async navigateToTransferForm(page: Page) {
-    console.log("[hapoalim] Navigating to transfer page...");
-
-    // Direct navigation to transfer page
     await page.goto(this.TRANSFER_URL, { waitUntil: "networkidle2", timeout: 30_000 }).catch(() => {});
     await this.waitForAngular(page);
     await new Promise((r) => setTimeout(r, 2000));
@@ -494,8 +467,6 @@ class HapoalimExecutor implements BankExecutor {
     });
 
     if (!isTransferPage) {
-      // Try menu navigation via "העברת כסף" link
-      console.log("[hapoalim] Direct URL didn't work, trying menu...");
       await page.evaluate(() => {
         const links = Array.from(document.querySelectorAll("a, button, div[role='button'], kite-button"));
         const transferLink = links.find((el) =>
@@ -507,15 +478,10 @@ class HapoalimExecutor implements BankExecutor {
       await this.waitForAngular(page);
     }
 
-    // Dump form inputs for debugging
     await this.dumpFormInputs(page);
-    console.log("[hapoalim] On transfer form page");
   }
 
   async fillAndSubmitForm(page: Page, transfer: TransferData) {
-    console.log("[hapoalim] Filling transfer form...");
-
-    // Make sure "לאחר" (to another) tab is selected
     await page.evaluate(() => {
       const tabs = Array.from(document.querySelectorAll("button, a, [role='tab'], label, span, kite-button"));
       const toOtherTab = tabs.find((el) => {
@@ -527,9 +493,7 @@ class HapoalimExecutor implements BankExecutor {
     await new Promise((r) => setTimeout(r, 1000));
     await this.waitForAngular(page);
 
-    // ── Fill recipient name (שם בעל החשבון) ────────────────────────────────
     if (transfer.toExternalName) {
-      console.log(`[hapoalim] Filling name: ${transfer.toExternalName}`);
       const nameSel = await waitForAny(page, [
         '[formcontrolname="beneficiaryName"]', '#beneficiaryName',
         '[formcontrolname="accountOwnerName"]', '#accountOwnerName',
@@ -558,10 +522,7 @@ class HapoalimExecutor implements BankExecutor {
       await new Promise((r) => setTimeout(r, 500));
     }
 
-    // ── Fill bank code (בנק) ───────────────────────────────────────────────
-    // This is likely a kite-autocomplete or poalim-mm-field with a dropdown
     if (transfer.toExternalBankCode) {
-      console.log(`[hapoalim] Filling bank code: ${transfer.toExternalBankCode}`);
       const bankSel = await waitForAny(page, [
         '[formcontrolname="bankCode"]', '#bankCode',
         '[formcontrolname="bankNumber"]', '#bankNumber',
@@ -585,9 +546,7 @@ class HapoalimExecutor implements BankExecutor {
       await new Promise((r) => setTimeout(r, 500));
     }
 
-    // ── Fill branch number (סניף) ──────────────────────────────────────────
     if (transfer.toExternalBranchNumber) {
-      console.log(`[hapoalim] Filling branch: ${transfer.toExternalBranchNumber}`);
       const branchSel = await waitForAny(page, [
         '[formcontrolname="branchNumber"]', '#branchNumber',
         '[formcontrolname="branch"]', '#branch',
@@ -605,9 +564,7 @@ class HapoalimExecutor implements BankExecutor {
       await new Promise((r) => setTimeout(r, 500));
     }
 
-    // ── Fill account number (מס' חשבון) — digits only ──────────────────────
     if (transfer.toExternalAccount) {
-      console.log(`[hapoalim] Filling account: ${transfer.toExternalAccount}`);
       const acctSel = await waitForAny(page, [
         '[formcontrolname="accountNumber"]', '#accountNumber',
         '[formcontrolname="beneficiaryAccountNumber"]', '#beneficiaryAccountNumber',
@@ -619,8 +576,6 @@ class HapoalimExecutor implements BankExecutor {
       await new Promise((r) => setTimeout(r, 500));
     }
 
-    // ── Fill amount (כמה?) ──────────────────────────────────────────────────
-    console.log(`[hapoalim] Filling amount: ${transfer.amount}`);
     const amountSel = await waitForAny(page, [
       '[formcontrolname="amount"]', '#amount',
       '[formcontrolname="transferAmount"]', '#transferAmount',
@@ -650,8 +605,6 @@ class HapoalimExecutor implements BankExecutor {
     await new Promise((r) => setTimeout(r, 1000));
 
     // ── Submit form → Step 2 confirmation ──────────────────────────────────
-    console.log("[hapoalim] Submitting form...");
-    // The submit button should be a red-coloring-btn (same as login)
     const submitted = await page.evaluate(() => {
       // Try the bank's standard red button first
       const redBtn = document.querySelector("button.red-coloring-btn:not(.login-btn)") as HTMLElement;
@@ -674,18 +627,11 @@ class HapoalimExecutor implements BankExecutor {
       if (nextBtn) { nextBtn.click(); return "text-match"; }
       return "none";
     });
-    console.log(`[hapoalim] Submit method: ${submitted}`);
-
-    // Wait for confirmation page
     await new Promise((r) => setTimeout(r, 3000));
     await this.waitForAngular(page);
-    console.log("[hapoalim] Should be on confirmation page");
   }
 
   async clickConfirmTransfer(page: Page) {
-    console.log("[hapoalim] Clicking confirm transfer...");
-
-    // On Step 2, the confirm button is red-coloring-btn with text "אישור העברה"
     await page.evaluate(() => {
       // Primary: find the red confirm button
       const redBtns = Array.from(document.querySelectorAll("button.red-coloring-btn"));
@@ -702,10 +648,8 @@ class HapoalimExecutor implements BankExecutor {
       if (btn) btn.click();
     });
 
-    // Wait for OTP dialog
     await new Promise((r) => setTimeout(r, 4000));
     await this.waitForAngular(page);
-    console.log("[hapoalim] Confirm clicked");
   }
 
   async hasOtpDialog(page: Page): Promise<boolean> {
@@ -728,9 +672,6 @@ class HapoalimExecutor implements BankExecutor {
   }
 
   async fillOtpAndSubmit(page: Page, otp: string) {
-    console.log("[hapoalim] Filling OTP code...");
-
-    // Try specific OTP selectors first (Angular formcontrolname)
     const otpSel = await waitForAny(page, [
       '[formcontrolname="otpCode"]', '#otpCode',
       '.otp-input', '[class*="otp"] input',
@@ -743,8 +684,6 @@ class HapoalimExecutor implements BankExecutor {
     if (otpSel) {
       await this.angularType(page, otpSel, otp);
     } else {
-      // Fallback: find any visible empty input in dialog/modal overlay
-      console.log("[hapoalim] OTP selector not found, trying fallback...");
       await page.evaluate((code: string) => {
         // Look for dialog/modal containers first
         const containers = document.querySelectorAll('[class*="dialog"], [class*="modal"], [class*="overlay"], [role="dialog"]');
@@ -773,8 +712,6 @@ class HapoalimExecutor implements BankExecutor {
 
     await new Promise((r) => setTimeout(r, 500));
 
-    // Click submit — red button in OTP dialog with "להמשך" text
-    console.log("[hapoalim] Submitting OTP...");
     await page.evaluate(() => {
       // Try red button in dialog
       const dialogs = document.querySelectorAll('[class*="dialog"], [class*="modal"], [role="dialog"]');
@@ -794,10 +731,8 @@ class HapoalimExecutor implements BankExecutor {
       if (submitBtn) submitBtn.click();
     });
 
-    // Wait for bank to process
     await new Promise((r) => setTimeout(r, 5000));
     await this.waitForAngular(page);
-    console.log("[hapoalim] OTP submitted");
   }
 
   async detectSuccess(page: Page): Promise<boolean> {

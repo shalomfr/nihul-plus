@@ -45,8 +45,7 @@ export async function GET(req: Request) {
     }));
 
     return NextResponse.json({ success: true, data: safe });
-  } catch (error) {
-    console.error("Users list error:", error);
+  } catch {
     return NextResponse.json({ success: false, error: "שגיאה" }, { status: 500 });
   }
 }

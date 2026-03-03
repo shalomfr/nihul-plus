@@ -4,35 +4,12 @@ import Topbar from "@/components/Topbar";
 import Link from "next/link";
 import {
   CheckCircle2, AlertTriangle, AlertCircle, Shield, ChevronDown,
-  Search, Filter, RefreshCw, X, Mail, Upload, Users, Landmark,
-  Phone, FileText, Zap, ArrowRight,
+  Search, Filter,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
-
-type ComplianceItem = {
-  id: string;
-  name: string;
-  type: string;
-  category: string;
-  status: string;
-  description?: string;
-  dueDate?: string;
-  completedAt?: string;
-  frequency?: string;
-  isRequired?: boolean;
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  FOUNDING_DOCS: "מסמכי יסוד",
-  ANNUAL_OBLIGATIONS: "חובות שנתיות לרשם",
-  TAX_APPROVALS: "אישורים מרשות המסים",
-  FINANCIAL_MGMT: "ניהול כספי שוטף",
-  DISTRIBUTION_DOCS: "תיעוד חלוקת כספים",
-  GOVERNANCE: "ממשל ופרוטוקולים",
-  EMPLOYEES_VOLUNTEERS: "עובדים ומתנדבים",
-  INSURANCE: "ביטוח",
-  GEMACH: "גמ\"ח כספים",
-};
+import { type ComplianceItem, CATEGORY_LABELS } from "@/lib/smart-actions";
+import HandleNowButton from "@/components/HandleNowButton";
+import SmartActionsModal from "@/components/SmartActionsModal";
 
 const CATEGORY_ORDER = [
   "FOUNDING_DOCS", "ANNUAL_OBLIGATIONS", "TAX_APPROVALS", "FINANCIAL_MGMT",
@@ -48,143 +25,6 @@ const FREQ_LABELS: Record<string, string> = {
 
 type FilterMode = "all" | "attention" | "ok";
 
-type SmartActionDef = {
-  label: string;
-  description: string;
-  icon: "mail" | "upload" | "users" | "bank" | "phone" | "docs" | "zap";
-  href?: string;
-  /** email template key to open in institutions page */
-  emailTemplate?: string;
-};
-
-type SmartActionsConfig = {
-  headline: string;
-  tip: string;
-  actions: SmartActionDef[];
-};
-
-function getSmartActions(item: ComplianceItem): SmartActionsConfig {
-  switch (item.category) {
-    case "ANNUAL_OBLIGATIONS":
-      return {
-        headline: "חובה שנתית לרשם העמותות",
-        tip: "שלח מייל מקצועי לרשם עם תבנית מוכנה, או טפל ישירות דרך הגשה מקוונת.",
-        actions: [
-          { label: "📧 שלח בקשת ארכה לרשם", description: "מייל מקצועי מוכן לשליחה", icon: "mail", href: "/portal/institutions?email=registrar_extension_request" },
-          { label: "📤 הגש מסמכים לרשם", description: "שלח מסמכים שהתבקשו", icon: "mail", href: "/portal/institutions?email=registrar_document_submission" },
-          { label: "📁 העלה מסמך לתיק", description: "שמור עותק מקומי", icon: "upload", href: "/portal/documents" },
-        ],
-      };
-
-    case "TAX_APPROVALS":
-      return {
-        headline: "אישורי מס — סעיף 46, מלכ\"ר, קבלות",
-        tip: "סעיף 46 מאפשר לתורמים זיכוי ממס של 35%. חידוש שנתי מותנה באישור ניהול תקין. הנפקת קבלות תרומה היא חובה חוקית.",
-        actions: [
-          { label: "📧 בקש חידוש סעיף 46", description: "מייל לרשות המסים", icon: "mail", href: "/portal/institutions?email=tax_section46_renewal" },
-          { label: "🧾 הנפק קבלות תרומה", description: "קבלות סעיף 46 לתורמים", icon: "docs", href: "/portal/invoices" },
-          { label: "📊 דוח תרומה מישות זרה", description: "אם רלוונטי לארגונך", icon: "mail", href: "/portal/institutions?email=tax_foreign_donation_report" },
-          { label: "📁 העלה אישור מרשות", description: "אחרי קבלת האישור", icon: "upload", href: "/portal/documents" },
-        ],
-      };
-
-    case "FOUNDING_DOCS":
-      return {
-        headline: "מסמך יסוד חסר",
-        tip: "יש להעלות את המסמך לתיק העמותה כדי שיהיה נגיש בכל עת.",
-        actions: [
-          { label: "📤 העלה מסמך עכשיו", description: "הוסף לתיק הדיגיטלי", icon: "upload", href: "/portal/documents" },
-          { label: "📋 תיק העמותה המלא", description: "צפה בכל המסמכים", icon: "docs", href: "/portal/org-file" },
-        ],
-      };
-
-    case "FINANCIAL_MGMT":
-      return {
-        headline: "פעולה בנקאית / כספית נדרשת",
-        tip: "עבור לדף הבנק לביצוע הפעולה הנדרשת, או ייצא דוח לרואה החשבון.",
-        actions: [
-          { label: "🏦 פתח דף בנק", description: "ניהול חשבונות והוצאות", icon: "bank", href: "/portal/banking" },
-          { label: "🧮 דף רואה חשבון", description: "ייצוא ודוחות כספיים", icon: "docs", href: "/portal/accountant" },
-        ],
-      };
-
-    case "DISTRIBUTION_DOCS":
-      return {
-        headline: "תיעוד חלוקת כספים חסר",
-        tip: "יש לתעד כל חלוקת כספים לפי דרישות רשם העמותות — פרוטוקול החלטה + חשבונית.",
-        actions: [
-          { label: "📁 העלה תיעוד", description: "חשבונית / פרוטוקול", icon: "upload", href: "/portal/documents" },
-          { label: "👥 הוסף פרוטוקול ועד", description: "ועד מנהל — ממשל", icon: "users", href: "/portal/board" },
-        ],
-      };
-
-    case "GOVERNANCE":
-      return {
-        headline: "ממשל תקין — פרוטוקולים, ועד וביקורת",
-        tip: "כל ישיבת ועד חייבת פרוטוקול חתום הכולל: תאריך, משתתפים, סדר יום, תוצאות הצבעה, והחלטות. פרוטוקול שלא נחתם — לא תקף.",
-        actions: [
-          { label: "👥 זמן ישיבת ועד", description: "שלח הזמנה לחברי הועד", icon: "users", href: "/portal/board" },
-          { label: "📁 הוסף פרוטוקול", description: "העלה פרוטוקול חתום", icon: "upload", href: "/portal/documents" },
-          { label: "📋 הצהרת ניגוד עניינים", description: "טופס הצהרה לחבר ועד", icon: "docs", href: "/portal/documents" },
-          { label: "📅 תאם בלוח שנה", description: "הוסף ישיבה ליומן", icon: "docs", href: "/portal/calendar" },
-        ],
-      };
-
-    case "EMPLOYEES_VOLUNTEERS":
-      return {
-        headline: "עובדים, מתנדבים וקרובי משפחה",
-        tip: "בדוק את העסקת קרובי משפחה (עד 1/3 מהועד יכולים להיות קרובים). כל העסקת קרוב משפחה של חבר ועד מחייבת אישור מיוחד בפרוטוקול + שכר סביר.",
-        actions: [
-          { label: "📋 בדוק קרובי משפחה", description: "בדיקת העסקת קרובים בעמותה", icon: "users", href: "/portal/board" },
-          { label: "📁 העלה הצהרת קרבה", description: "הצהרה חתומה מחבר ועד", icon: "upload", href: "/portal/documents" },
-          { label: "📁 העלה חוזה עבודה", description: "חוזה עובד / מתנדב", icon: "upload", href: "/portal/documents" },
-          { label: "📧 שלח לרשם", description: "הגשת מסמכים לרשם", icon: "mail", href: "/portal/institutions?email=registrar_document_submission" },
-        ],
-      };
-
-    case "INSURANCE":
-      return {
-        headline: "כיסוי ביטוחי נדרש",
-        tip: "ביטוח מתנדבים הוא חובה חוקית. כמו כן מומלץ ביטוח D&O לחברי ועד, ביטוח רכוש, וביטוח צד שלישי לאירועים.",
-        actions: [
-          { label: "📞 פנה למלווה", description: "קבל הכוונה מהמלווה שלך", icon: "phone", href: "/portal/contact" },
-          { label: "📁 העלה פוליסה", description: "ביטוח מתנדבים / D&O / רכוש", icon: "upload", href: "/portal/documents" },
-          { label: "📞 בקש הצעת מחיר", description: "פנה לסוכן ביטוח", icon: "phone", href: "/portal/contact" },
-        ],
-      };
-
-    case "GEMACH":
-      return {
-        headline: "מסמך גמ\"ח חסר",
-        tip: "פעילות גמ\"ח מחייבת תיעוד מיוחד לפי הנחיות רשם העמותות.",
-        actions: [
-          { label: "📁 העלה מסמך גמ\"ח", description: "הסכם / נוהל גמ\"ח", icon: "upload", href: "/portal/documents" },
-          { label: "📧 הגש לרשם", description: "שלח עדכון לרשם", icon: "mail", href: "/portal/institutions?email=registrar_document_submission" },
-        ],
-      };
-
-    default:
-      return {
-        headline: "דרוש טיפול",
-        tip: item.description ?? "יש לטפל בפריט זה בהקדם.",
-        actions: [
-          { label: "📁 העלה מסמך", description: "הוסף לתיק הדיגיטלי", icon: "upload", href: "/portal/documents" },
-          { label: "📧 שלח מייל לרשם", description: "פנה לרשות הרלוונטית", icon: "mail", href: "/portal/institutions" },
-        ],
-      };
-  }
-}
-
-const ACTION_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  mail: Mail,
-  upload: Upload,
-  users: Users,
-  bank: Landmark,
-  phone: Phone,
-  docs: FileText,
-  zap: Zap,
-};
-
 export default function PortalStatusPage() {
   const { showSuccess, showError } = useToast();
   const [items, setItems] = useState<ComplianceItem[]>([]);
@@ -192,7 +32,6 @@ export default function PortalStatusPage() {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [filterMode, setFilterMode] = useState<FilterMode>("all");
   const [search, setSearch] = useState("");
-  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
   const [actionModal, setActionModal] = useState<ComplianceItem | null>(null);
 
   const fetchData = () => {
@@ -230,33 +69,6 @@ export default function PortalStatusPage() {
     setOpenCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
   };
 
-  const handleMarkAsHandled = async (item: ComplianceItem) => {
-    setUpdatingIds(prev => new Set(prev).add(item.id));
-    try {
-      const res = await fetch(`/api/compliance/${item.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "OK", completedAt: new Date().toISOString() }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showSuccess(`"${item.name}" סומן כמטופל`);
-        setActionModal(null);
-        fetchData();
-      } else {
-        showError("שגיאה בעדכון הסטטוס");
-      }
-    } catch {
-      showError("שגיאה בעדכון הסטטוס");
-    } finally {
-      setUpdatingIds(prev => {
-        const next = new Set(prev);
-        next.delete(item.id);
-        return next;
-      });
-    }
-  };
-
   const filteredItems = items.filter(item => {
     if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterMode === "attention") return item.status !== "OK";
@@ -292,21 +104,6 @@ export default function PortalStatusPage() {
     return <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border ${s.cls}`}>{s.label}</span>;
   };
 
-  const getActionButton = (item: ComplianceItem) => {
-    if (item.status === "OK") return null;
-    const isUpdating = updatingIds.has(item.id);
-    return (
-      <button
-        onClick={() => setActionModal(item)}
-        disabled={isUpdating}
-        className="text-[11px] font-bold text-white px-3 py-1.5 rounded-lg bg-[#2563eb] hover:bg-[#1d4ed8] transition-all disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
-      >
-        {isUpdating ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
-        טפל עכשיו
-      </button>
-    );
-  };
-
   const getCategoryScore = (cat: string) => {
     const catItems = items.filter(i => i.category === cat);
     const catOk = catItems.filter(i => i.status === "OK").length;
@@ -326,8 +123,6 @@ export default function PortalStatusPage() {
       </div>
     );
   }
-
-  const modalConfig = actionModal ? getSmartActions(actionModal) : null;
 
   return (
     <div className="px-4 md:px-8 pb-6 md:pb-8">
@@ -466,7 +261,7 @@ export default function PortalStatusPage() {
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {getStatusBadge(item.status)}
-                          {getActionButton(item)}
+                          <HandleNowButton item={item} onClick={setActionModal} />
                         </div>
                       </div>
                     ))}
@@ -479,79 +274,7 @@ export default function PortalStatusPage() {
       </div>
 
       {/* ─── SMART ACTION MODAL ─── */}
-      {actionModal && modalConfig && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setActionModal(null)}>
-          <div
-            className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between p-5 pb-4 border-b border-[#f1f5f9]">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  {getStatusIcon(actionModal.status)}
-                  <span className="text-[15px] font-bold text-[#1e293b]">{actionModal.name}</span>
-                </div>
-                <div className="text-[12px] text-[#64748b]">{modalConfig.headline}</div>
-              </div>
-              <button onClick={() => setActionModal(null)} className="text-[#94a3b8] hover:text-[#1e293b] transition-colors ml-2 flex-shrink-0">
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="p-5 space-y-4">
-              {/* Tip */}
-              <div className="bg-[#fffbeb] border border-[#fde68a] rounded-xl p-3">
-                <p className="text-[12px] text-[#92400e] leading-relaxed">{modalConfig.tip}</p>
-              </div>
-
-              {/* Action buttons */}
-              <div className="space-y-2">
-                <div className="text-[11px] font-semibold text-[#64748b] mb-2">בחר פעולה:</div>
-                {modalConfig.actions.map((action, i) => {
-                  const Icon = ACTION_ICONS[action.icon] ?? FileText;
-                  return (
-                    <Link
-                      key={i}
-                      href={action.href ?? "#"}
-                      onClick={() => setActionModal(null)}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-[#e8ecf4] hover:border-[#2563eb]/40 hover:bg-[#eff6ff] transition-all group"
-                    >
-                      <div className="w-9 h-9 rounded-lg bg-[#f8f9fc] group-hover:bg-[#eff6ff] flex items-center justify-center flex-shrink-0 transition-colors">
-                        <Icon size={16} className="text-[#2563eb]" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-[13px] font-semibold text-[#1e293b]">{action.label}</div>
-                        <div className="text-[11px] text-[#64748b]">{action.description}</div>
-                      </div>
-                      <ArrowRight size={14} className="text-[#cbd5e1] group-hover:text-[#2563eb] transition-colors flex-shrink-0" />
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex gap-2 px-5 pb-5 pt-1">
-              <button
-                onClick={() => handleMarkAsHandled(actionModal)}
-                disabled={updatingIds.has(actionModal.id)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#f0fdf4] border border-[#bbf7d0] text-[#16a34a] font-semibold text-[13px] hover:bg-[#dcfce7] transition-colors disabled:opacity-50"
-              >
-                {updatingIds.has(actionModal.id) ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                סמן כמטופל
-              </button>
-              <button
-                onClick={() => setActionModal(null)}
-                className="px-4 py-2.5 rounded-xl bg-[#f8f9fc] border border-[#e8ecf4] text-[#64748b] font-medium text-[13px] hover:bg-[#f1f5f9] transition-colors"
-              >
-                סגור
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SmartActionsModal item={actionModal} onClose={() => setActionModal(null)} onHandled={fetchData} />
     </div>
   );
 }

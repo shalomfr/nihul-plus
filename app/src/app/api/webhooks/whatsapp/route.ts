@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
   const response = await handleWhatsAppCommand(phone, msgBody);
   if (response) {
-    await sendWhatsApp(phone, response).catch(console.error);
+    await sendWhatsApp(phone, response).catch(() => {});
   }
 
   // Twilio expects a TwiML response or empty 200
@@ -157,7 +157,7 @@ async function handleWhatsAppCommand(phone: string, body: string): Promise<strin
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "send_missing_receipts" }),
-    }).catch(console.error);
+    }).catch(() => {});
 
     return `✅ קבלה נשלחת ל-${donation.donor.email}\n\n${receiptText}`;
   }

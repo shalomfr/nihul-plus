@@ -29,8 +29,7 @@ export async function GET(req: Request) {
         "Cache-Control": "no-store",
       },
     });
-  } catch (err) {
-    console.error("[annual-report] Error:", err);
+  } catch {
     return apiError("שגיאה ביצירת הדוח", 500);
   }
 }

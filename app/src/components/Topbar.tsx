@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Search, Bell, User, LogOut } from "lucide-react";
+import { Bell, User, LogOut } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import BackButton from "@/components/BackButton";
@@ -31,8 +31,6 @@ export default function Topbar({ title, subtitle }: { title: string; subtitle?: 
   // Show back button on all pages except portal home
   const showBackButton = pathname !== "/portal";
 
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
 
   // Notifications state
   const [notifOpen, setNotifOpen] = useState(false);
@@ -137,18 +135,6 @@ export default function Topbar({ title, subtitle }: { title: string; subtitle?: 
         <div className="hidden lg:block text-left text-[12px] text-[#64748b] leading-relaxed ml-3">
           <div className="text-[13px] text-[#1e293b]">יום {dayOfWeek}</div>
           <div>{formatted}</div>
-        </div>
-
-        {/* Search input */}
-        <div className="hidden md:flex bg-white border border-[#e8ecf4] rounded-xl items-center gap-2 px-3 py-2 w-48 shadow-sm">
-          <Search size={14} className="text-[#64748b]" />
-          <input
-            type="text"
-            placeholder="חיפוש..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none outline-none text-[13px] text-[#1e293b] placeholder-[#94a3b8] w-full"
-          />
         </div>
 
         {/* Notifications bell */}

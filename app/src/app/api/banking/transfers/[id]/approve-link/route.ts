@@ -78,7 +78,7 @@ export const POST = withErrorHandler(async (
     <p style="font-size:12px;color:#64748b;text-align:center;">הקישור תקף ל-48 שעות בלבד.</p>
   </div>
 </div>`,
-      }).catch((err) => console.error(`[approve-link] Email failed to ${email}:`, err));
+      }).catch(() => {});
       sent++;
     }
 
@@ -93,9 +93,7 @@ export const POST = withErrorHandler(async (
         token,
         appUrl: APP_URL,
       });
-      await sendWhatsApp(phone, waBody).catch((err) =>
-        console.error(`[approve-link] WhatsApp failed to ${phone}:`, err)
-      );
+      await sendWhatsApp(phone, waBody).catch(() => {});
     }
   }
 

@@ -17,8 +17,6 @@ export function isWhatsAppConfigured() {
  */
 export async function sendWhatsApp(phone: string, message: string): Promise<void> {
   if (!isWhatsAppConfigured()) {
-    console.log(`[DEV WhatsApp] to: ${phone}`);
-    console.log(`[DEV WhatsApp] body: ${message.slice(0, 200)}`);
     return;
   }
 

@@ -1,8 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import Topbar from "@/components/Topbar";
-import { Users, Calendar, Download, Clock, UserCheck, Crown, User, CheckCircle2, Plus, X } from "lucide-react";
+import { Users, Calendar, Download, Clock, UserCheck, Crown, User, CheckCircle2, Plus, X, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { type ComplianceItem } from "@/lib/smart-actions";
+import HandleNowButton from "@/components/HandleNowButton";
+import SmartActionsModal from "@/components/SmartActionsModal";
 
 type BoardMember = {
   id: string;
@@ -65,6 +68,8 @@ export default function PortalBoardPage() {
   // Modal states
   const [showMeetingModal, setShowMeetingModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
+  const [governanceItems, setGovernanceItems] = useState<ComplianceItem[]>([]);
+  const [actionItem, setActionItem] = useState<ComplianceItem | null>(null);
 
   // Meeting form
   const [meetingTitle, setMeetingTitle] = useState("");
@@ -84,13 +89,17 @@ export default function PortalBoardPage() {
       fetch("/api/board/meetings").then(r => r.json()),
       fetch("/api/board/members").then(r => r.json()),
       fetch("/api/board/resolutions").then(r => r.json()),
+      fetch("/api/compliance?category=GOVERNANCE").then(r => r.json()),
     ])
-      .then(([meetingsRes, membersRes, resolutionsRes]) => {
+      .then(([meetingsRes, membersRes, resolutionsRes, complianceRes]) => {
         setData({
           meetings: meetingsRes.success ? meetingsRes.data : [],
           members: membersRes.success ? membersRes.data : [],
           resolutions: resolutionsRes.success ? resolutionsRes.data : [],
         });
+        if (complianceRes.success) {
+          setGovernanceItems((complianceRes.data.items ?? []).filter((i: ComplianceItem) => i.status !== "OK"));
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -422,6 +431,26 @@ export default function PortalBoardPage() {
         </div>
       </div>
 
+      {/* ─── GOVERNANCE ITEMS ─── */}
+      {governanceItems.length > 0 && (
+        <div className="anim-fade-up delay-5 bg-white rounded-2xl p-5 border border-[#fde68a] mt-6 hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+          <h3 className="text-[15px] font-bold text-[#1e293b] mb-4 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-[#fffbeb] flex items-center justify-center">
+              <AlertTriangle size={16} className="text-[#d97706]" />
+            </div>
+            ממשל תקין — דרוש טיפול
+          </h3>
+          <div className="space-y-2">
+            {governanceItems.map(item => (
+              <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-[#fffbeb] border border-[#fde68a]">
+                <span className="text-[13px] font-semibold text-[#92400e]">{item.name}</span>
+                <HandleNowButton item={item} onClick={setActionItem} size="sm" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ─── SCHEDULE MEETING MODAL ─── */}
       {showMeetingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
@@ -556,6 +585,8 @@ export default function PortalBoardPage() {
           </div>
         </div>
       )}
+
+      <SmartActionsModal item={actionItem} onClose={() => setActionItem(null)} onHandled={fetchData} />
     </div>
   );
 }

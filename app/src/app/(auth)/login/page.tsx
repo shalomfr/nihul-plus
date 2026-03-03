@@ -195,8 +195,9 @@ export default function LoginPage() {
       }
 
       if (res?.ok) {
-        if (callbackUrl) {
-          router.push(callbackUrl);
+        const safeCallback = callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : null;
+        if (safeCallback) {
+          router.push(safeCallback);
         } else {
           const sessionRes = await fetch("/api/auth/session");
           const session = await sessionRes.json();

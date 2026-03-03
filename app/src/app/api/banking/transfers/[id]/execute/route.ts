@@ -144,9 +144,7 @@ async function markCompleted(transferId: string, fromAccountId: string | null, o
       where: { organizationId: orgId, status: "ACTIVE" },
     });
     if (conn) {
-      void syncBankData(orgId, conn.id).catch((e) =>
-        console.error("[execute] post-transfer sync failed:", e)
-      );
+      void syncBankData(orgId, conn.id).catch(() => {});
     }
   }
 }

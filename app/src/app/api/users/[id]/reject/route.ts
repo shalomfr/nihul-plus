@@ -26,8 +26,7 @@ export async function POST(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Reject error:", error);
+  } catch {
     return NextResponse.json({ success: false, error: "שגיאה" }, { status: 500 });
   }
 }

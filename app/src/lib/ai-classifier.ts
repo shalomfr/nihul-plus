@@ -95,8 +95,8 @@ ${categoriesText}
         }
       }
     }
-  } catch (err) {
-    console.error("[ai-classifier] Error:", err);
+  } catch {
+    // AI classification failed — fallback to rule-based
   }
 
   return ruleBasedClassify(description, direction);

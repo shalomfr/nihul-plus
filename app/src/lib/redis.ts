@@ -5,7 +5,6 @@ const globalForRedis = globalThis as unknown as { redis: Redis };
 function createRedisClient() {
   const url = process.env.REDIS_URL;
   if (!url) {
-    console.warn("REDIS_URL not set — Redis features disabled");
     return null;
   }
   return new Redis(url, { maxRetriesPerRequest: null });

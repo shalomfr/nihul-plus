@@ -90,7 +90,6 @@ export const CRON_JOBS: CronJobDef[] = [
 export async function registerCronJobs() {
   const connection = makeConnection();
   if (!connection) {
-    console.warn("[scheduler] REDIS_URL not set — cron jobs not registered");
     return;
   }
 
@@ -109,7 +108,6 @@ export async function registerCronJobs() {
         },
       }
     );
-    console.log(`[scheduler] ✓ Registered: ${job.name} (${job.pattern}) — ${job.description}`);
   }
 
   await queue.close();

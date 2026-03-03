@@ -30,8 +30,7 @@ export async function POST(
     await prisma.user.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Delete user error:", error);
+  } catch {
     return NextResponse.json({ success: false, error: "שגיאה" }, { status: 500 });
   }
 }

@@ -26,6 +26,9 @@ import {
   Receipt,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+import { type ComplianceItem } from "@/lib/smart-actions";
+import HandleNowButton from "@/components/HandleNowButton";
+import SmartActionsModal from "@/components/SmartActionsModal";
 
 interface PortalStats {
   compliance: {
@@ -136,21 +139,23 @@ export default function PortalHomePage() {
   const userName = session?.user?.name ?? "משתמש";
   const [stats, setStats] = useState<PortalStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionItem, setActionItem] = useState<ComplianceItem | null>(null);
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("/api/stats/portal");
+      if (res.ok) {
+        const json = await res.json();
+        setStats(json.data);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch("/api/stats/portal");
-        if (res.ok) {
-          const json = await res.json();
-          setStats(json.data);
-        }
-      } catch {
-        // silently fail
-      } finally {
-        setLoading(false);
-      }
-    };
     if (session) fetchStats();
     else setLoading(false);
   }, [session]);
@@ -347,16 +352,24 @@ export default function PortalHomePage() {
               </div>
 
               <div className="space-y-2.5">
-                {stats.compliance.expiringSoon > 0 && (
-                  <Link href="/portal/status" className="flex items-center gap-3 p-3 rounded-xl bg-[#fffbeb] border border-[#fde68a] hover:bg-[#fef3c7] transition-all group">
-                    <AlertTriangle size={16} className="text-[#d97706] flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-[13px] font-semibold text-[#92400e]">
-                        {stats.compliance.expiringSoon} פריטים עומדים לפוג
+                {stats.compliance.items
+                  .filter((i: ComplianceItem) => i.status !== "OK")
+                  .slice(0, 3)
+                  .map((item: ComplianceItem) => (
+                    <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-[#fffbeb] border border-[#fde68a]">
+                      <AlertTriangle size={16} className="text-[#d97706] flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-semibold text-[#92400e] truncate">{item.name}</div>
+                        <div className="text-[11px] text-[#b45309]">
+                          {item.dueDate ? `תוקף: ${new Date(item.dueDate).toLocaleDateString("he-IL")}` : "דורש טיפול"}
+                        </div>
                       </div>
-                      <div className="text-[11px] text-[#b45309]">דורש טיפול ב-30 יום הקרובים</div>
+                      <HandleNowButton item={item} onClick={setActionItem} size="sm" />
                     </div>
-                    <ChevronLeft size={16} className="text-[#d97706] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  ))}
+                {stats.compliance.items.filter((i: ComplianceItem) => i.status !== "OK").length > 3 && (
+                  <Link href="/portal/status" className="flex items-center justify-center gap-1.5 text-[12px] text-[#2563eb] font-semibold hover:underline py-1">
+                    ראה את כל הפריטים <ChevronLeft size={14} />
                   </Link>
                 )}
 
@@ -438,6 +451,8 @@ export default function PortalHomePage() {
           פורטל ניהול עמותות · מעטפת
         </p>
       </div>
+
+      <SmartActionsModal item={actionItem} onClose={() => setActionItem(null)} onHandled={fetchStats} />
     </div>
   );
 }

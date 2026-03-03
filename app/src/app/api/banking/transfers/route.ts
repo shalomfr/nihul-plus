@@ -103,7 +103,7 @@ async function sendApprovalNotifications(
     <p style="font-size:12px;color:#64748b;text-align:center;">הקישור תקף ל-48 שעות.</p>
   </div>
 </div>`,
-        }).catch((err) => console.error("[transfers] Email failed:", err));
+        }).catch(() => {});
       }
 
       if (signatory.phone) {
@@ -117,10 +117,10 @@ async function sendApprovalNotifications(
             token,
             appUrl: APP_URL,
           })
-        ).catch((err) => console.error("[transfers] WhatsApp failed:", err));
+        ).catch(() => {});
       }
     }
-  } catch (err) {
-    console.error("[transfers] sendApprovalNotifications failed:", err);
+  } catch {
+    // notification send failures are non-critical
   }
 }

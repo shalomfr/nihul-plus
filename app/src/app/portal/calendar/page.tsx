@@ -2,6 +2,9 @@
 import { useState, useEffect, useMemo } from "react";
 import Topbar from "@/components/Topbar";
 import { Calendar, ChevronRight, ChevronLeft, X } from "lucide-react";
+import { type ComplianceItem } from "@/lib/smart-actions";
+import HandleNowButton from "@/components/HandleNowButton";
+import SmartActionsModal from "@/components/SmartActionsModal";
 
 type BoardMeeting = {
   id: string;
@@ -9,15 +12,6 @@ type BoardMeeting = {
   date: string;
   location?: string;
   status: string;
-};
-
-type ComplianceItem = {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  description?: string;
-  dueDate?: string;
 };
 
 type CalendarEvent = {
@@ -31,6 +25,7 @@ type CalendarEvent = {
   color: string;
   fullDate: string; // localized date string
   time?: string;
+  complianceItemId?: string;
 };
 
 const hebrewMonths: Record<number, string> = {
@@ -44,6 +39,8 @@ export default function PortalCalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [complianceItems, setComplianceItems] = useState<ComplianceItem[]>([]);
+  const [actionItem, setActionItem] = useState<ComplianceItem | null>(null);
 
   // Mini calendar navigation
   const today = new Date();
@@ -89,6 +86,7 @@ export default function PortalCalendarPage() {
         // Add compliance deadlines
         if (complianceRes.success) {
           const items: ComplianceItem[] = complianceRes.data.items ?? [];
+          setComplianceItems(items.filter(i => i.status !== "OK"));
           items
             .filter(item => item.dueDate && new Date(item.dueDate).getTime() >= now && item.status !== "OK")
             .forEach(item => {
@@ -108,6 +106,7 @@ export default function PortalCalendarPage() {
                 tag,
                 color,
                 fullDate: d.toLocaleDateString("he-IL"),
+                complianceItemId: item.id,
               });
             });
         }
@@ -271,16 +270,22 @@ export default function PortalCalendarPage() {
                     <div className="text-[13px] font-semibold text-[#1e293b]">{ev.title}</div>
                     <div className="text-[12px] text-[#64748b]">{ev.sub}</div>
                   </div>
-                  <span
-                    className="text-[11px] font-semibold px-3 py-1.5 rounded-lg flex-shrink-0"
-                    style={{
-                      background: ev.tag === "דחוף" ? "#fef2f2" : ev.tag === "בקרוב" ? "#fffbeb" : "#f0fdf4",
-                      color: ev.color,
-                      border: `1px solid ${ev.tag === "דחוף" ? "#fecaca" : ev.tag === "בקרוב" ? "#fde68a" : "#bbf7d0"}`,
-                    }}
-                  >
-                    {ev.tag}
-                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg"
+                      style={{
+                        background: ev.tag === "דחוף" ? "#fef2f2" : ev.tag === "בקרוב" ? "#fffbeb" : "#f0fdf4",
+                        color: ev.color,
+                        border: `1px solid ${ev.tag === "דחוף" ? "#fecaca" : ev.tag === "בקרוב" ? "#fde68a" : "#bbf7d0"}`,
+                      }}
+                    >
+                      {ev.tag}
+                    </span>
+                    {ev.complianceItemId && (() => {
+                      const ci = complianceItems.find(c => c.id === ev.complianceItemId);
+                      return ci ? <HandleNowButton item={ci} onClick={setActionItem} size="sm" /> : null;
+                    })()}
+                  </div>
                 </button>
               ))
             )}
@@ -321,7 +326,7 @@ export default function PortalCalendarPage() {
                 <div className="text-[11px] text-[#64748b] mb-1">פרטים</div>
                 <div className="text-[13px] text-[#1e293b]">{selectedEvent.sub}</div>
               </div>
-              <div>
+              <div className="flex items-center gap-2">
                 <span
                   className="text-[11px] font-semibold px-3 py-1.5 rounded-lg inline-block"
                   style={{
@@ -332,11 +337,23 @@ export default function PortalCalendarPage() {
                 >
                   {selectedEvent.tag}
                 </span>
+                {selectedEvent.complianceItemId && (() => {
+                  const ci = complianceItems.find(c => c.id === selectedEvent.complianceItemId);
+                  return ci ? (
+                    <HandleNowButton
+                      item={ci}
+                      onClick={(item) => { setSelectedEvent(null); setActionItem(item); }}
+                      size="sm"
+                    />
+                  ) : null;
+                })()}
               </div>
             </div>
           </div>
         </div>
       )}
+
+      <SmartActionsModal item={actionItem} onClose={() => setActionItem(null)} onHandled={() => window.location.reload()} />
     </div>
   );
 }

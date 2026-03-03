@@ -39,7 +39,6 @@ export async function enqueueAutomation(data: {
   triggerData?: Record<string, unknown>;
 }) {
   if (!automationQueue) {
-    console.warn("Redis not configured — skipping automation job");
     return null;
   }
   return automationQueue.add("run-workflow", data, {
@@ -55,7 +54,6 @@ export async function enqueueEmail(data: {
   from?: string;
 }) {
   if (!emailQueue) {
-    console.warn("Redis not configured — skipping email job");
     return null;
   }
   return emailQueue.add("send-email", data, { attempts: 3 });

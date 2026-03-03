@@ -108,12 +108,9 @@ export async function POST(req: Request) {
     if (ocrRes.ok) {
       const ocrData = await ocrRes.json();
       ocrText = ocrData.text ?? ocrData.result ?? "";
-    } else {
-      console.warn("[OCR] Backend returned", ocrRes.status);
     }
-  } catch (err) {
-    console.error("[OCR] Backend error:", err);
-    // Proceed with empty text — user can fill manually
+  } catch {
+    // OCR backend error — proceed with empty text, user can fill manually
   }
 
   // Parse extracted fields

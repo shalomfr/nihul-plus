@@ -77,7 +77,7 @@ export const POST = withErrorHandler(async (req: Request) => {
   <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0"/>
   <p style="font-size:11px;color:#94a3b8;">מופק אוטומטית ע"י מערכת מעטפת</p>
 </div>`,
-        }).catch(console.error);
+        }).catch(() => {});
         sent++;
       }
       result = `מיילי תודה נשלחו ל-${sent} תורמים`;
@@ -132,7 +132,7 @@ export const POST = withErrorHandler(async (req: Request) => {
           to: donor.email!,
           subject: `קבלה מס׳ ${String(receiptNumber).padStart(6, "0")} — ${org.name}`,
           html: receiptHtml,
-        }).catch(console.error);
+        }).catch(() => {});
 
         // Create Receipt record and link it
         const receipt = await prisma.receipt.create({
@@ -150,7 +150,7 @@ export const POST = withErrorHandler(async (req: Request) => {
           await prisma.donation.update({
             where: { id: donation.id },
             data: { receiptId: receipt.id },
-          }).catch(console.error);
+          }).catch(() => {});
         }
 
         sent++;

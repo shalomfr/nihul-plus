@@ -60,8 +60,8 @@ export async function POST(req: Request) {
       const data = await ocrRes.json();
       ocrText = data.text ?? data.result ?? "";
     }
-  } catch (err) {
-    console.warn("[smart-upload] OCR failed:", err);
+  } catch {
+    // OCR failed — proceed without text extraction
   }
 
   const { category, confidence, label } = manualCategory

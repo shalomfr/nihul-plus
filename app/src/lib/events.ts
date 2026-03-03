@@ -35,8 +35,8 @@ export async function publishEvent(event: AppEvent) {
   for (const fn of listeners) {
     try {
       await fn(enriched);
-    } catch (err) {
-      console.error("Event listener error:", err);
+    } catch {
+      // event listener error handled silently
     }
   }
 }
@@ -50,8 +50,8 @@ export function registerAutomationListener() {
     try {
       const { matchAndExecuteWorkflows } = await import("./automation/engine");
       await matchAndExecuteWorkflows(event);
-    } catch (err) {
-      console.error("Automation matching error:", err);
+    } catch {
+      // automation matching error handled silently
     }
   });
 }
@@ -82,7 +82,7 @@ export async function logAudit(params: {
         ...(params.userId ? { user: { connect: { id: params.userId } } } : {}),
       },
     });
-  } catch (err) {
-    console.error("Audit log error:", err);
+  } catch {
+    // audit log write failed silently
   }
 }

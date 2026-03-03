@@ -21,8 +21,6 @@ export async function sendEmail(options: {
   const from = options.from ?? process.env.EMAIL_FROM ?? "noreply@maatafet.co.il";
 
   if (!transport) {
-    console.log("[DEV EMAIL]", { to: options.to, subject: options.subject });
-    console.log(options.html.slice(0, 200));
     return { messageId: `dev-${Date.now()}` };
   }
 

@@ -7,6 +7,9 @@ import {
   FileSpreadsheet, BarChart3, PiggyBank, AlertCircle, CheckCircle,
   Calendar,
 } from "lucide-react";
+import { type ComplianceItem } from "@/lib/smart-actions";
+import HandleNowButton from "@/components/HandleNowButton";
+import SmartActionsModal from "@/components/SmartActionsModal";
 
 type Summary = {
   period: { from: string; to: string };
@@ -60,18 +63,29 @@ export default function AccountantPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [complianceItems, setComplianceItems] = useState<ComplianceItem[]>([]);
+  const [actionItem, setActionItem] = useState<ComplianceItem | null>(null);
 
   const { from, to } = customFrom && customTo
     ? { from: customFrom, to: customTo }
     : getPeriodDates(period);
 
-  useEffect(() => {
+  const fetchData = () => {
     setLoading(true);
-    fetch(`/api/accountant/summary?from=${from}&to=${to}`)
-      .then(r => r.json())
-      .then(res => { if (res.success) setSummary(res.data); })
+    Promise.all([
+      fetch(`/api/accountant/summary?from=${from}&to=${to}`).then(r => r.json()),
+      fetch("/api/compliance").then(r => r.json()),
+    ])
+      .then(([summaryRes, complianceRes]) => {
+        if (summaryRes.success) setSummary(summaryRes.data);
+        if (complianceRes.success) setComplianceItems(complianceRes.data.items ?? []);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchData();
   }, [from, to]);
 
   const handleExport = async (type: "expenses" | "transactions" | "all") => {
@@ -274,19 +288,25 @@ export default function AccountantPage() {
             <div className="bg-white rounded-2xl border border-[#e8ecf4] p-5" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
               <div className="text-sm font-semibold text-[#1e293b] mb-3">✅ מצב ניהול תקין</div>
               <div className="space-y-2">
-                {summary.compliance.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      {c.status === "OK"
-                        ? <CheckCircle size={14} className="text-[#16a34a]" />
-                        : <AlertCircle size={14} className={c.status === "EXPIRED" ? "text-[#ef4444]" : "text-[#d97706]"} />}
-                      <span className="text-[#64748b]">{c.itemName}</span>
+                {summary.compliance.map((c, i) => {
+                  const fullItem = complianceItems.find(ci => ci.name === c.itemName);
+                  return (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        {c.status === "OK"
+                          ? <CheckCircle size={14} className="text-[#16a34a]" />
+                          : <AlertCircle size={14} className={c.status === "EXPIRED" ? "text-[#ef4444]" : "text-[#d97706]"} />}
+                        <span className="text-[#64748b]">{c.itemName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[#94a3b8]">
+                          {c.dueDate ? new Date(c.dueDate).toLocaleDateString("he-IL") : "—"}
+                        </span>
+                        {fullItem && <HandleNowButton item={fullItem} onClick={setActionItem} size="sm" />}
+                      </div>
                     </div>
-                    <span className="text-xs text-[#94a3b8]">
-                      {c.dueDate ? new Date(c.dueDate).toLocaleDateString("he-IL") : "—"}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -294,6 +314,8 @@ export default function AccountantPage() {
       ) : (
         <div className="text-center py-12 text-[#94a3b8]">לא נמצאו נתונים לתקופה זו</div>
       )}
+
+      <SmartActionsModal item={actionItem} onClose={() => setActionItem(null)} onHandled={fetchData} />
     </div>
   );
 }

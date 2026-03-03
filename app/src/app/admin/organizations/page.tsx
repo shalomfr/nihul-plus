@@ -95,9 +95,7 @@ export default function AdminOrganizationsPage() {
         showError(data.error ?? "שגיאה ביצירת ארגון");
       }
     } catch {
-      showSuccess("הארגון נוצר בהצלחה");
-      setShowAddModal(false);
-      fetchOrganizations();
+      showError("שגיאה ביצירת ארגון");
     } finally {
       setSubmitting(false);
     }
@@ -124,8 +122,7 @@ export default function AdminOrganizationsPage() {
         showError(data.error ?? "שגיאה בעדכון ארגון");
       }
     } catch {
-      showSuccess("עדכון ארגון - בגרסה הבאה");
-      setShowEditModal(false);
+      showError("שגיאה בעדכון ארגון");
     } finally {
       setSubmitting(false);
     }
@@ -147,8 +144,7 @@ export default function AdminOrganizationsPage() {
         showError(data.error ?? "שגיאה במחיקת ארגון");
       }
     } catch {
-      showSuccess("מחיקת ארגון - בגרסה הבאה");
-      setShowDeleteConfirm(false);
+      showError("שגיאה במחיקת ארגון");
     } finally {
       setSubmitting(false);
     }

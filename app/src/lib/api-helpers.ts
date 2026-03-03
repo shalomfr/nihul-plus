@@ -63,7 +63,6 @@ export function withErrorHandler(handler: (...args: any[]) => Promise<NextRespon
       if (err instanceof AuthError) {
         return apiError(err.message, err.status);
       }
-      console.error("API Error:", err);
       return apiError("שגיאה פנימית", 500);
     }
   };

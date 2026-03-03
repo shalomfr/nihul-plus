@@ -132,7 +132,7 @@ export const POST = withErrorHandler(async (req: Request) => {
           ${notes ? `<p>סיבה: ${notes}</p>` : ""}
           <a href="${APP_URL}/portal/banking" style="background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px;">צפה בפרטים ←</a>
         </div>`,
-      }).catch(console.error);
+      }).catch(() => {});
     }
   } else {
     // Count approved (including this one)
@@ -155,7 +155,7 @@ export const POST = withErrorHandler(async (req: Request) => {
             <p>כל ${transfer.requiredApprovals} החתימות התקבלו. ההעברה בסך ₪${Number(transfer.amount).toLocaleString("he-IL")} אושרה.</p>
             <a href="${APP_URL}/portal/banking" style="background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px;">צפה בפרטים ←</a>
           </div>`,
-        }).catch(console.error);
+        }).catch(() => {});
       }
     }
   }
