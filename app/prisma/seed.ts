@@ -56,7 +56,7 @@ async function main() {
   console.log("Manager: yossi@or-letzion.org.il");
 
   // ==================== REGULATORY CALENDAR ====================
-  const seededItems = await seedRegulatoryCalendar(org.id);
+  const seededItems = await seedRegulatoryCalendar(org.id, { clearExisting: true });
   console.log(`Regulatory calendar: ${seededItems} items seeded`);
 
   // ==================== BOARD MEMBERS ====================

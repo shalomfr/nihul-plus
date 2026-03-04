@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { seedRegulatoryCalendar } from "@/lib/regulatory-calendar-seeds";
 
 const BCRYPT_ROUNDS = 10;
 const MIN_PASSWORD_LENGTH = 8;
@@ -50,6 +51,9 @@ export async function POST(req: Request) {
         status: "PENDING",
       },
     });
+
+    // Populate default compliance tasks for the new organization
+    await seedRegulatoryCalendar(org.id);
 
     return NextResponse.json({
       success: true,

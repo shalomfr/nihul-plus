@@ -420,12 +420,13 @@ const ANNUAL_ITEMS: RegulatoryItem[] = [
  * Seed regulatory calendar for a new organization.
  * Creates ComplianceItem records for all Israeli NGO annual deadlines.
  */
-export async function seedRegulatoryCalendar(organizationId: string): Promise<number> {
+export async function seedRegulatoryCalendar(organizationId: string, { clearExisting = false } = {}): Promise<number> {
   const now = new Date();
   const currentYear = now.getFullYear();
 
-  // Clear existing items so seed always repopulates fresh
-  await prisma.complianceItem.deleteMany({ where: { organizationId } });
+  if (clearExisting) {
+    await prisma.complianceItem.deleteMany({ where: { organizationId } });
+  }
 
   let created = 0;
 
