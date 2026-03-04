@@ -53,7 +53,7 @@ export function getSmartActions(item: ComplianceItem): SmartActionsConfig {
     case "TAX_APPROVALS":
       return {
         headline: "אישורי מס — סעיף 46, מלכ\"ר, קבלות",
-        tip: "סעיף 46 מאפשר לתורמים זיכוי ממס של 35%. חידוש שנתי מותנה באישור ניהול תקין. הנפקת קבלות תרומה היא חובה חוקית.",
+        tip: "סעיף 46 מאפשר לתורמים זיכוי ממס של 35% (מינימום 207 ₪, תקרה 10,354,816 ₪). חידוש עד 31.8 בשנה שפג התוקף. החל מ-2026 חובה דיווח דיגיטלי במערכת 'תרומות ישראל'.",
         actions: [
           { label: "📧 בקש חידוש סעיף 46", description: "מייל לרשות המסים", icon: "mail", href: "/portal/institutions?email=tax_section46_renewal" },
           { label: "🧾 הנפק קבלות תרומה", description: "קבלות סעיף 46 לתורמים", icon: "docs", href: "/portal/invoices" },

@@ -147,7 +147,7 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
     key: "tax_section46_renewal",
     authority: "רשות המסים",
     subject: "בקשת חידוש אישור סעיף 46 — {{orgName}}",
-    description: "בקשת חידוש אישור זיכוי ממס לתורמים",
+    description: "בקשת חידוש אישור זיכוי ממס לתורמים — יש להגיש עד סוף אוגוסט בשנה שפג התוקף",
     recipientEmail: "malkar@taxes.gov.il",
     buildHtml: (p) =>
       wrap(`
@@ -162,7 +162,8 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
           <li>כתובת: ${p.address}</li>
           <li>נציג: ${p.contactName}, ${p.contactPhone}</li>
         </ul>
-        <p>מצ"ב: אישור ניהול תקין בתוקף, דוחות כספיים לשנים האחרונות.</p>
+        <p>מצ"ב: אישור ניהול תקין בתוקף, דוחות כספיים מבוקרים לשנתיים האחרונות.</p>
+        <p style="font-size:12px;color:#64748b;">📅 מועד הגשה: עד 31 באוגוסט בשנה שפג תוקף האישור. חלק מהאישורים מחודשים אוטומטית מאז 2016.</p>
         <p>בכבוד,<br/>${p.chairmanName ?? p.contactName}<br/>יו"ר ועד ${p.orgName}</p>`),
     buildText: (p) =>
       `לכבוד רשות המסים,\n\nהנדון: בקשת חידוש סעיף 46 — עמותת ${p.orgName} (${p.orgNumber})\n\nמבוקש חידוש אישור זיכוי ממס לתורמים.\n\nבכבוד,\n${p.contactName}\n${p.contactPhone}`,
@@ -521,7 +522,7 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
         <h2 style="text-align:center;color:#1e293b;">קבלה על תרומה לפי סעיף 46 לפקודת מס הכנסה</h2>
         <h3 style="text-align:center;color:#475569;">עמותת ${p.orgName} (${p.orgNumber})</h3>
         <br/>
-        <p style="background:#fef3c7;padding:10px;border-radius:6px;font-size:13px;">💡 <strong>חובת דיווח 2026:</strong> החל משנת 2026, תרומות מעל סכום מסוים חייבות לכלול מספר ח"פ/ת"ז של התורם ולהיות מדווחות דיגיטלית לרשות המסים במערכת <strong>"תרומות ישראל"</strong> כדי שהתורם יקבל זיכוי אוטומטי.</p>
+        <p style="background:#fef3c7;padding:10px;border-radius:6px;font-size:13px;">💡 <strong>חובת דיווח 2026:</strong> החל משנת 2026, כל תרומה (מעל 207 ₪ לזיכוי מס) חייבת לכלול מספר ח"פ/ת"ז של התורם ולהיות מדווחת דיגיטלית לרשות המסים במערכת <strong>"תרומות ישראל"</strong>. תקרת תרומה מזכה: 10,354,816 ₪ או 30% מההכנסה החייבת (הנמוך). זיכוי: 35%.</p>
         <br/>
         <p><strong>מספר קבלה:</strong> _______________</p>
         <p><strong>תאריך:</strong> _______________</p>
