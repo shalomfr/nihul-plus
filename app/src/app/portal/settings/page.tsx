@@ -12,6 +12,24 @@ type WaStatus = {
 
 type Tab = "qr" | "phone";
 
+type TemplateInfo = {
+  key: string;
+  authority: string;
+  description: string;
+  defaultEmail: string;
+  overrideEmail: string | null;
+  effectiveEmail: string;
+};
+
+const AUTHORITY_GROUPS: Record<string, string> = {
+  "רשם העמותות": "#2563eb",
+  "רשות המסים": "#7c3aed",
+  "עירייה / רשות מקומית": "#0891b2",
+  "ביטוח לאומי": "#059669",
+  "בנק": "#d97706",
+  "פנימי": "#64748b",
+};
+
 export default function SettingsPage() {
   const [wa, setWa] = useState<WaStatus | null>(null);
   const [loading, setLoading] = useState(false);
@@ -19,6 +37,14 @@ export default function SettingsPage() {
   const [phoneInput, setPhoneInput] = useState("");
   const [pairingCode, setPairingCode] = useState("");
   const [error, setError] = useState("");
+
+  // Template email overrides state
+  const [templates, setTemplates] = useState<TemplateInfo[]>([]);
+  const [tmplLoading, setTmplLoading] = useState(true);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [tmplMsg, setTmplMsg] = useState<{ key: string; ok: boolean; text: string } | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -35,6 +61,17 @@ export default function SettingsPage() {
     const interval = setInterval(fetchStatus, 5000);
     return () => clearInterval(interval);
   }, [fetchStatus]);
+
+  // Fetch templates
+  useEffect(() => {
+    fetch("/api/authority-emails/overrides")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success) setTemplates(res.data.templates);
+      })
+      .catch(console.error)
+      .finally(() => setTmplLoading(false));
+  }, []);
 
   const doAction = async (action: string, extra?: Record<string, string>) => {
     setLoading(true);
@@ -60,14 +97,55 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveEmail = async (key: string) => {
+    setSavingKey(key);
+    setTmplMsg(null);
+    try {
+      const res = await fetch("/api/authority-emails/overrides", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateKey: key, recipientEmail: editValue }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTemplates((prev) =>
+          prev.map((t) =>
+            t.key === key
+              ? {
+                  ...t,
+                  overrideEmail: data.data.isOverride ? data.data.recipientEmail : null,
+                  effectiveEmail: data.data.recipientEmail,
+                }
+              : t
+          )
+        );
+        setEditingKey(null);
+        setTmplMsg({ key, ok: true, text: "נשמר" });
+        setTimeout(() => setTmplMsg((m) => (m?.key === key ? null : m)), 2000);
+      } else {
+        setTmplMsg({ key, ok: false, text: data.error ?? "שגיאה" });
+      }
+    } catch {
+      setTmplMsg({ key, ok: false, text: "שגיאת רשת" });
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
   const isConnected = wa?.status === "connected";
   const hasQr = !!wa?.qrcode;
+
+  // Group templates by authority
+  const grouped = templates.reduce<Record<string, TemplateInfo[]>>((acc, t) => {
+    (acc[t.authority] ??= []).push(t);
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-8" dir="rtl">
       <div>
         <h1 className="text-2xl font-bold text-[#1e293b]">הגדרות</h1>
-        <p className="text-sm text-[#64748b] mt-1">ניהול חיבורים ואינטגרציות</p>
+        <p className="text-sm text-[#64748b] mt-1">ניהול חיבורים, אינטגרציות ותבניות</p>
       </div>
 
       {/* WhatsApp Card */}
@@ -213,6 +291,126 @@ export default function SettingsPage() {
                   שירות WhatsApp לא מוגדר. הוסף WHATSAPP_SERVICE_URL ו-WHATSAPP_API_KEY למשתני הסביבה.
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Email Templates Card */}
+      <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+        <div className="px-6 py-5 border-b border-[#f1f5f9] flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-[#fef3c7] flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-bold text-[#1e293b]">תבניות מייל לרשויות</h2>
+            <p className="text-sm text-[#64748b]">ניהול כתובות מייל לתבניות — ניתן להתאים את הכתובות לכל תבנית</p>
+          </div>
+          <div className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#fef3c7] text-[#ca8a04]">
+            {templates.length} תבניות
+          </div>
+        </div>
+
+        <div className="p-6">
+          {tmplLoading ? (
+            <div className="text-center text-[#64748b] py-8">טוען תבניות...</div>
+          ) : templates.length === 0 ? (
+            <div className="text-center text-[#64748b] py-8">לא נמצאו תבניות</div>
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(grouped).map(([authority, items]) => (
+                <div key={authority}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: AUTHORITY_GROUPS[authority] ?? "#94a3b8" }}
+                    />
+                    <h3 className="text-[14px] font-bold" style={{ color: AUTHORITY_GROUPS[authority] ?? "#475569" }}>
+                      {authority}
+                    </h3>
+                    <span className="text-[11px] text-[#94a3b8]">({items.length})</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {items.map((t) => {
+                      const isEditing = editingKey === t.key;
+                      const isSaving = savingKey === t.key;
+                      const msg = tmplMsg?.key === t.key ? tmplMsg : null;
+                      const isInternal = !t.defaultEmail && !t.overrideEmail;
+
+                      return (
+                        <div
+                          key={t.key}
+                          className="flex items-center gap-3 bg-[#f8f9fc] rounded-xl px-4 py-3 border border-[#e8ecf4]/50"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-semibold text-[#1e293b] truncate">{t.description}</div>
+                            {isInternal && !isEditing && (
+                              <div className="text-[11px] text-[#94a3b8] mt-0.5">תבנית פנימית — ללא נמען</div>
+                            )}
+                            {!isInternal && !isEditing && (
+                              <div className="text-[11px] text-[#64748b] mt-0.5" dir="ltr">
+                                {t.effectiveEmail}
+                                {t.overrideEmail && (
+                                  <span className="mr-1 text-[#ca8a04]">(מותאם)</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {isEditing ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="email"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") handleSaveEmail(t.key); if (e.key === "Escape") setEditingKey(null); }}
+                                placeholder={t.defaultEmail || "הכנס כתובת מייל"}
+                                className="w-56 border border-[#e2e8f0] rounded-lg px-3 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-[#ca8a04]"
+                                dir="ltr"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => handleSaveEmail(t.key)}
+                                disabled={isSaving}
+                                className="px-3 py-1.5 bg-[#ca8a04] text-white text-[11px] font-bold rounded-lg hover:bg-[#a16207] disabled:opacity-50"
+                              >
+                                {isSaving ? "..." : "שמור"}
+                              </button>
+                              <button
+                                onClick={() => setEditingKey(null)}
+                                className="px-2 py-1.5 text-[#64748b] text-[11px] hover:text-[#1e293b]"
+                              >
+                                ביטול
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              {msg && (
+                                <span className={`text-[11px] font-semibold ${msg.ok ? "text-[#16a34a]" : "text-[#dc2626]"}`}>
+                                  {msg.text}
+                                </span>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setEditingKey(t.key);
+                                  setEditValue(t.overrideEmail ?? t.defaultEmail);
+                                }}
+                                className="px-3 py-1.5 text-[11px] font-semibold text-[#ca8a04] bg-[#fef3c7] rounded-lg hover:bg-[#fde68a] transition-colors"
+                              >
+                                ערוך
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

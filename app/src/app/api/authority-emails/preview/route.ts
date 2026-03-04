@@ -53,6 +53,16 @@ export async function GET(req: Request) {
     currentYear: new Date().getFullYear(),
   };
 
+  // Check for org-level email override
+  const override = await prisma.authorityEmailOverride.findUnique({
+    where: {
+      organizationId_templateKey: {
+        organizationId: user.organizationId!,
+        templateKey: templateKey,
+      },
+    },
+  });
+
   const subject = buildSubject(template, org.name);
   let html = template.buildHtml(params);
 
@@ -68,7 +78,7 @@ export async function GET(req: Request) {
       data: {
         subject,
         html,
-        recipientEmail: template.recipientEmail,
+        recipientEmail: override?.recipientEmail ?? template.recipientEmail,
         authority: template.authority,
       },
     }),

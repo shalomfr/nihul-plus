@@ -249,6 +249,7 @@ model Organization {
   finandaConnections  FinandaConnection[]
   scraperConnections  BankScraperConnection[]
   adminEvents         AdminEvent[]
+  emailOverrides      AuthorityEmailOverride[]
 
   @@map("organizations")
 }
@@ -990,6 +991,21 @@ model FileUpload {
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("file_uploads")
+}
+
+// ==================== AUTHORITY EMAIL OVERRIDES ====================
+
+model AuthorityEmailOverride {
+  id               String       @id @default(cuid())
+  organizationId   String       @map("organization_id")
+  templateKey      String       @map("template_key")
+  recipientEmail   String       @map("recipient_email")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, templateKey])
+  @@map("authority_email_overrides")
 }
 
 // ==================== ADMIN EVENTS ====================

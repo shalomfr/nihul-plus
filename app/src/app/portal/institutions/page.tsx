@@ -47,13 +47,31 @@ const INSTITUTIONS = [
 ];
 
 const AUTHORITY_TEMPLATES: { key: AuthorityEmailKey; label: string; authority: string; defaultEmail: string }[] = [
-  { key: "registrar_extension_request", label: "בקשת ארכה להגשת דוחות", authority: "רשם העמותות", defaultEmail: "amutot@justice.gov.il" },
-  { key: "registrar_audit_response", label: "תגובה לממצאי ביקורת", authority: "רשם העמותות", defaultEmail: "amutot@justice.gov.il" },
-  { key: "registrar_document_submission", label: "הגשת מסמכים", authority: "רשם העמותות", defaultEmail: "amutot@justice.gov.il" },
-  { key: "tax_section46_renewal", label: "חידוש אישור סעיף 46", authority: "רשות המסים", defaultEmail: "amutot@taxes.gov.il" },
-  { key: "tax_foreign_donation_report", label: "דיווח תרומה מישות זרה", authority: "רשות המסים", defaultEmail: "amutot@justice.gov.il" },
+  // רשם העמותות
+  { key: "registrar_extension_request", label: "בקשת ארכה להגשת דוחות", authority: "רשם העמותות", defaultEmail: "moked-amutot@justice.gov.il" },
+  { key: "registrar_audit_response", label: "תגובה לממצאי ביקורת", authority: "רשם העמותות", defaultEmail: "moked-amutot@justice.gov.il" },
+  { key: "registrar_document_submission", label: "הגשת מסמכים", authority: "רשם העמותות", defaultEmail: "moked-amutot@justice.gov.il" },
+  { key: "registrar_board_change", label: "הודעה על שינוי חברי ועד", authority: "רשם העמותות", defaultEmail: "moked-amutot@justice.gov.il" },
+  { key: "registrar_update_details", label: "עדכון פרטי עמותה", authority: "רשם העמותות", defaultEmail: "moked-amutot@justice.gov.il" },
+  // רשות המסים
+  { key: "tax_section46_renewal", label: "חידוש אישור סעיף 46", authority: "רשות המסים", defaultEmail: "malkar@taxes.gov.il" },
+  { key: "tax_foreign_donation_report", label: "דיווח תרומה מישות זרה", authority: "רשות המסים", defaultEmail: "malkar@taxes.gov.il" },
+  { key: "tax_bookkeeping_approval", label: "בקשת אישור ניהול ספרים", authority: "רשות המסים", defaultEmail: "amutot@taxes.gov.il" },
+  // עירייה
   { key: "municipality_grant_request", label: "בקשת תמיכה מעירייה", authority: "עירייה / רשות מקומית", defaultEmail: "" },
   { key: "municipality_execution_report", label: "דוח ביצוע תמיכה", authority: "עירייה / רשות מקומית", defaultEmail: "" },
+  // ביטוח לאומי
+  { key: "bituach_leumi_volunteers", label: "רישום מתנדבים בביטוח לאומי", authority: "ביטוח לאומי", defaultEmail: "maasikim@nioi.gov.il" },
+  // בנק
+  { key: "bank_signatories_update", label: "עדכון מורשי חתימה בבנק", authority: "בנק", defaultEmail: "" },
+  // פנימי
+  { key: "board_meeting_protocol", label: "פרוטוקול ישיבת ועד", authority: "פנימי", defaultEmail: "" },
+  { key: "general_assembly_protocol", label: "פרוטוקול אסיפה כללית", authority: "פנימי", defaultEmail: "" },
+  { key: "conflict_of_interest_declaration", label: "הצהרת ניגוד עניינים", authority: "פנימי", defaultEmail: "" },
+  { key: "family_relationship_declaration", label: "הצהרת קרבה משפחתית", authority: "פנימי", defaultEmail: "" },
+  { key: "no_criminal_record_declaration", label: "הצהרת העדר עבירות", authority: "פנימי", defaultEmail: "" },
+  { key: "section46_receipt", label: "קבלה על תרומה סעיף 46", authority: "פנימי", defaultEmail: "" },
+  { key: "volunteer_certificate", label: "אישור התנדבות", authority: "פנימי", defaultEmail: "" },
 ];
 
 export default function InstitutionsPage() {

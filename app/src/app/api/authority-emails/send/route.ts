@@ -48,7 +48,17 @@ export const POST = withErrorHandler(async (req: Request) => {
     currentYear: new Date().getFullYear(),
   };
 
-  const to = recipientEmail || template.recipientEmail;
+  // Check for org-level email override
+  const override = await prisma.authorityEmailOverride.findUnique({
+    where: {
+      organizationId_templateKey: {
+        organizationId: user.organizationId!,
+        templateKey,
+      },
+    },
+  });
+
+  const to = recipientEmail || override?.recipientEmail || template.recipientEmail;
   if (!to) return apiError("כתובת נמען נדרשת", 400);
 
   const subject = buildSubject(template, org.name);
