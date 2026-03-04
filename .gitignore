@@ -57,11 +57,14 @@ coverage/
 /*.jpeg
 /*.png
 /*.mp4
+/*.zip
 app/*.pdf
 app/*.mp4
 app/*.jpg
 app/*.jpeg
 app/*.png
+app/*.html
+app/*.docx
 
 # External API specs
 app/BOI_*.yaml
