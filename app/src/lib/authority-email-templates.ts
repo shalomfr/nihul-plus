@@ -67,7 +67,7 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
     key: "registrar_extension_request",
     authority: "רשם העמותות",
     subject: "בקשת ארכה להגשת דוחות — {{orgName}}",
-    description: "בקשת הארכה להגשת הדוחות השנתיים",
+    description: "בקשת ארכה להגשת דוחות — ההגשה הרשמית דרך האזור האישי באתר רשות התאגידים, המייל משמש לגיבוי ותמיכה",
     recipientEmail: "moked-amutot@justice.gov.il",
     buildHtml: (p) =>
       wrap(`
@@ -92,7 +92,7 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
     key: "registrar_audit_response",
     authority: "רשם העמותות",
     subject: "תגובה לממצאי ביקורת — {{orgName}}",
-    description: "מענה לממצאים שנמצאו בביקורת הרשם",
+    description: "מענה לממצאי ביקורת — ההגשה הרשמית דרך האזור האישי באתר רשות התאגידים, המייל משמש לגיבוי ותמיכה",
     recipientEmail: "moked-amutot@justice.gov.il",
     buildHtml: (p) =>
       wrap(`
@@ -122,7 +122,7 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
     key: "registrar_document_submission",
     authority: "רשם העמותות",
     subject: "הגשת מסמכים — {{orgName}}",
-    description: "הגשת מסמכים ודוחות לרשם העמותות",
+    description: "הגשת מסמכים לרשם — ההגשה הרשמית דרך האזור האישי באתר רשות התאגידים, המייל משמש לגיבוי ותמיכה",
     recipientEmail: "moked-amutot@justice.gov.il",
     buildHtml: (p) =>
       wrap(`
@@ -249,7 +249,7 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
     key: "registrar_board_change",
     authority: "רשם העמותות",
     subject: "הודעה על שינוי חברי ועד — {{orgName}}",
-    description: "דיווח לרשם על שינוי בהרכב הועד המנהל",
+    description: "דיווח על שינוי חברי ועד — חובה להגיש דרך המערכת המקוונת באתר רשות התאגידים, המייל משמש לגיבוי ותמיכה",
     recipientEmail: "moked-amutot@justice.gov.il",
     buildHtml: (p) =>
       wrap(`
@@ -271,7 +271,7 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
     key: "registrar_update_details",
     authority: "רשם העמותות",
     subject: "עדכון פרטי עמותה — {{orgName}}",
-    description: "הודעה לרשם על שינוי פרטי העמותה (כתובת, טלפון וכד׳)",
+    description: "עדכון פרטי עמותה — חובה להגיש דרך המערכת המקוונת באתר רשות התאגידים, המייל משמש לגיבוי ותמיכה",
     recipientEmail: "moked-amutot@justice.gov.il",
     buildHtml: (p) =>
       wrap(`
@@ -300,14 +300,15 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
     key: "tax_bookkeeping_approval",
     authority: "רשות המסים",
     subject: "בקשת אישור ניהול ספרים — {{orgName}}",
-    description: "בקשה לקבלת אישור ניהול ספרים מרשות המסים",
-    recipientEmail: "amutot@taxes.gov.il",
+    description: "בקשה לאישור ניהול ספרים — יש להגיש לפקיד השומה האזורי דרך מערכת מפ\"ל או במייל ישיר",
+    recipientEmail: "",
     buildHtml: (p) =>
       wrap(`
-        <p>לכבוד,<br/>רשות המסים בישראל<br/>מחלקת עמותות</p>
+        <p>לכבוד,<br/>פקיד השומה האזורי<br/>רשות המסים בישראל</p>
         <br/>
         <p><strong>הנדון: בקשת אישור ניהול ספרים — עמותת ${p.orgName} (מספר ${p.orgNumber})</strong></p>
         <p>הננו מבקשים בזה לקבל/לחדש אישור ניהול ספרים בהתאם לדרישות פקודת מס הכנסה.</p>
+        <p style="background:#fef3c7;padding:10px;border-radius:6px;font-size:13px;">💡 <strong>שים לב:</strong> הגשת הבקשה מומלצת דרך מערכת הפניות לציבור (מפ"ל) באתר רשות המסים, או ישירות לפקיד השומה האזורי שבו מתנהל תיק העמותה.</p>
         <p><strong>פרטי העמותה:</strong></p>
         <ul>
           <li>שם: ${p.orgName}</li>
@@ -318,14 +319,14 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
         <p>מצ"ב: דוחות כספיים לשנה האחרונה, אישור ניהול תקין.</p>
         <p>בכבוד,<br/>${p.chairmanName ?? p.contactName}<br/>יו"ר ועד ${p.orgName}</p>`),
     buildText: (p) =>
-      `לכבוד רשות המסים,\n\nהנדון: בקשת אישור ניהול ספרים — עמותת ${p.orgName} (${p.orgNumber})\n\nמבוקש אישור ניהול ספרים.\n\nבכבוד,\n${p.contactName}\n${p.contactPhone}`,
+      `לכבוד פקיד השומה האזורי,\n\nהנדון: בקשת אישור ניהול ספרים — עמותת ${p.orgName} (${p.orgNumber})\n\nמבוקש אישור ניהול ספרים.\n\nשים לב: מומלץ להגיש דרך מערכת מפ"ל באתר רשות המסים.\n\nבכבוד,\n${p.contactName}\n${p.contactPhone}`,
   },
   // 11. רישום מתנדבים בביטוח לאומי
   {
     key: "bituach_leumi_volunteers",
     authority: "ביטוח לאומי",
     subject: "רישום מתנדבים — {{orgName}}",
-    description: "רישום מתנדבי העמותה בביטוח לאומי",
+    description: "רישום מתנדבים — הדרך התקנית היא דרך פורטל המעסיקים של ביטוח לאומי, המייל משמש לבירורים ותקלות",
     recipientEmail: "maasikim@nioi.gov.il",
     buildHtml: (p) =>
       wrap(`
@@ -356,13 +357,14 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
     key: "bank_signatories_update",
     authority: "בנק",
     subject: "עדכון מורשי חתימה — {{orgName}}",
-    description: "בקשה לעדכון מורשי חתימה בחשבון הבנק",
+    description: "עדכון מורשי חתימה — הבנק דורש פרוטוקול מקורי חתום ע\"י עו\"ד (אישור חתימה), יש לשלוח למייל הבנקאי בסניף",
     recipientEmail: "",
     buildHtml: (p) =>
       wrap(`
         <p>לכבוד,<br/>מנהל/ת סניף הבנק</p>
         <br/>
         <p><strong>הנדון: עדכון מורשי חתימה — עמותת ${p.orgName} (מספר ${p.orgNumber})</strong></p>
+        <p style="background:#fef3c7;padding:10px;border-radius:6px;font-size:13px;">💡 <strong>שים לב:</strong> הבנק דורש פרוטוקול מקורי חתום על ידי עורך דין (אישור חתימה). יש לצרף את המסמך הסרוק למייל זה ולשלוח לבנקאי האישי בסניף.</p>
         <p>בהתאם להחלטת הועד המנהל מיום _______________, הננו מבקשים לעדכן את רשימת מורשי החתימה בחשבון העמותה:</p>
         <p><strong>מורשי חתימה שיש להסיר:</strong></p>
         <ul><li>_______________</li></ul>
@@ -512,17 +514,20 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
     key: "section46_receipt",
     authority: "פנימי",
     subject: "קבלה על תרומה לפי סעיף 46 — {{orgName}}",
-    description: "קבלה רשמית לתורם עם זיכוי מס סעיף 46",
+    description: "קבלה רשמית לתורם — חובה לכלול ח\"פ/ת\"ז התורם ולדווח דיגיטלית במערכת \"תרומות ישראל\" (החל מ-2026)",
     recipientEmail: "",
     buildHtml: (p) =>
       wrap(`
         <h2 style="text-align:center;color:#1e293b;">קבלה על תרומה לפי סעיף 46 לפקודת מס הכנסה</h2>
         <h3 style="text-align:center;color:#475569;">עמותת ${p.orgName} (${p.orgNumber})</h3>
         <br/>
+        <p style="background:#fef3c7;padding:10px;border-radius:6px;font-size:13px;">💡 <strong>חובת דיווח 2026:</strong> החל משנת 2026, תרומות מעל סכום מסוים חייבות לכלול מספר ח"פ/ת"ז של התורם ולהיות מדווחות דיגיטלית לרשות המסים במערכת <strong>"תרומות ישראל"</strong> כדי שהתורם יקבל זיכוי אוטומטי.</p>
+        <br/>
         <p><strong>מספר קבלה:</strong> _______________</p>
         <p><strong>תאריך:</strong> _______________</p>
         <p><strong>שם התורם:</strong> _______________</p>
-        <p><strong>ת.ז. / ח.פ.:</strong> _______________</p>
+        <p><strong>ת.ז. / ח.פ. התורם:</strong> _______________ <span style="color:#dc2626;font-size:12px;">(חובה)</span></p>
+        <p><strong>כתובת התורם:</strong> _______________</p>
         <p><strong>סכום התרומה:</strong> ₪_______________</p>
         <p><strong>אמצעי תשלום:</strong> _______________</p>
         <br/>
@@ -530,7 +535,7 @@ export const AUTHORITY_TEMPLATES: AuthorityEmailTemplate[] = [
         <br/>
         <p>חתימה: _______________ &nbsp;&nbsp; חותמת העמותה</p>`),
     buildText: (p) =>
-      `קבלה על תרומה — ${p.orgName}\n\nמספר: _______________\nשם תורם: _______________\nסכום: ₪_______________\n\nהתרומה מזכה בזיכוי מס לפי סעיף 46.`,
+      `קבלה על תרומה — ${p.orgName}\n\nמספר: _______________\nשם תורם: _______________\nת.ז./ח.פ. תורם: _______________ (חובה)\nסכום: ₪_______________\n\nהתרומה מזכה בזיכוי מס לפי סעיף 46.\nשים לב: החל מ-2026 חובה לדווח דיגיטלית במערכת "תרומות ישראל".`,
   },
   // 19. אישור התנדבות
   {

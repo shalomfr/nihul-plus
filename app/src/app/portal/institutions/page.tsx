@@ -56,7 +56,7 @@ const AUTHORITY_TEMPLATES: { key: AuthorityEmailKey; label: string; authority: s
   // רשות המסים
   { key: "tax_section46_renewal", label: "חידוש אישור סעיף 46", authority: "רשות המסים", defaultEmail: "malkar@taxes.gov.il" },
   { key: "tax_foreign_donation_report", label: "דיווח תרומה מישות זרה", authority: "רשות המסים", defaultEmail: "malkar@taxes.gov.il" },
-  { key: "tax_bookkeeping_approval", label: "בקשת אישור ניהול ספרים", authority: "רשות המסים", defaultEmail: "amutot@taxes.gov.il" },
+  { key: "tax_bookkeeping_approval", label: "בקשת אישור ניהול ספרים", authority: "רשות המסים", defaultEmail: "" },
   // עירייה
   { key: "municipality_grant_request", label: "בקשת תמיכה מעירייה", authority: "עירייה / רשות מקומית", defaultEmail: "" },
   { key: "municipality_execution_report", label: "דוח ביצוע תמיכה", authority: "עירייה / רשות מקומית", defaultEmail: "" },
