@@ -31,7 +31,7 @@ export default function StatCard({ icon: Icon, label, value, change, trend, colo
           </div>
         )}
       </div>
-      <div className="text-2xl font-extrabold text-[#1e293b] mb-1">{value}</div>
+      <div className="text-xl md:text-2xl font-extrabold text-[#1e293b] mb-1">{value}</div>
       <div className="text-xs text-[#64748b] font-medium">{label}</div>
     </div>
   );

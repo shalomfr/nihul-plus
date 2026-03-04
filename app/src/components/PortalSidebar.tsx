@@ -29,6 +29,12 @@ export default function PortalSidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { startTour } = useTour();
+
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
   const { data: session } = useSession();
 
   // Org info from portal stats
@@ -86,7 +92,7 @@ export default function PortalSidebar() {
 
       <aside
         data-tour="portal-sidebar"
-        className={`w-60 h-screen fixed right-0 top-0 flex flex-col z-50 transition-transform duration-300 ease-in-out
+        className={`w-60 h-screen fixed right-0 top-0 flex flex-col z-50 overflow-y-auto transition-transform duration-300 ease-in-out
           ${mobileOpen ? "translate-x-0" : "translate-x-full"} md:translate-x-0`}
         style={{
           background: "#ffffff",

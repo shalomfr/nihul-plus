@@ -114,7 +114,7 @@ export default function AdminUsersPage() {
     <div className="px-4 md:px-8 pb-6 md:pb-8">
       <Topbar title="משתמשים והרשאות" subtitle="עובדי החברה + מנהלי עמותות" />
 
-      <div className="bg-white rounded-2xl border border-[#e8ecf4] p-5 mb-6 flex items-center justify-between" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+      <div className="bg-white rounded-2xl border border-[#e8ecf4] p-5 mb-6 flex items-center justify-between flex-wrap gap-4" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#2563eb]/10">
             <Users size={22} className="text-[#2563eb]" />
@@ -129,7 +129,7 @@ export default function AdminUsersPage() {
         </a>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 flex-wrap">
         {[
           { key: "pending", label: "בקשות ממתינות", icon: Clock },
           { key: "active", label: "משתמשים פעילים", icon: CheckCircle },
@@ -156,6 +156,7 @@ export default function AdminUsersPage() {
         ) : users.length === 0 ? (
           <div className="p-8 text-center text-[#64748b]">אין משתמשים</div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#e8ecf4]">
@@ -165,10 +166,10 @@ export default function AdminUsersPage() {
                 <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">
                   תפקיד
                 </th>
-                <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">
+                <th className="hidden md:table-cell text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">
                   אימייל
                 </th>
-                <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">
+                <th className="hidden lg:table-cell text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">
                   ארגון
                 </th>
                 <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">
@@ -195,8 +196,8 @@ export default function AdminUsersPage() {
                       {roleLabel(user.role)}
                     </span>
                   </td>
-                  <td className="p-4 text-[13px] text-[#64748b]">{user.email}</td>
-                  <td className="p-4 text-[13px] text-[#1e293b]">
+                  <td className="hidden md:table-cell p-4 text-[13px] text-[#64748b]">{user.email}</td>
+                  <td className="hidden lg:table-cell p-4 text-[13px] text-[#1e293b]">
                     {user.organizationName}
                     {user.organizationNumber !== "–" && ` (${user.organizationNumber})`}
                   </td>
@@ -263,6 +264,7 @@ export default function AdminUsersPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

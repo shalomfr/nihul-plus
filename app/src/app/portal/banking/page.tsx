@@ -521,7 +521,7 @@ export default function BankingPage() {
             </div>
             <div className="text-xs text-[#64748b]">יתרה כוללת</div>
           </div>
-          <div className="text-xl font-bold text-[#1e293b]">{fmt(totalBalance)}</div>
+          <div className="text-lg md:text-xl font-bold text-[#1e293b]">{fmt(totalBalance)}</div>
           <div className="text-xs text-[#94a3b8] mt-1">{accounts.length} חשבונות</div>
         </div>
 
@@ -532,7 +532,7 @@ export default function BankingPage() {
             </div>
             <div className="text-xs text-[#64748b]">הוצאות ששולמו</div>
           </div>
-          <div className="text-xl font-bold text-[#1e293b]">{fmt(totalExpenses)}</div>
+          <div className="text-lg md:text-xl font-bold text-[#1e293b]">{fmt(totalExpenses)}</div>
           <div className="text-xs text-[#94a3b8] mt-1">{expenses.length} הוצאות</div>
         </div>
 
@@ -543,7 +543,7 @@ export default function BankingPage() {
             </div>
             <div className="text-xs text-[#64748b]">חשבונות פעילים</div>
           </div>
-          <div className="text-xl font-bold text-[#1e293b]">{accounts.filter(a => a.isActive).length}</div>
+          <div className="text-lg md:text-xl font-bold text-[#1e293b]">{accounts.filter(a => a.isActive).length}</div>
           <div className="text-xs text-[#94a3b8] mt-1">מסונכרנים</div>
         </div>
 
@@ -554,13 +554,13 @@ export default function BankingPage() {
             </div>
             <div className="text-xs text-[#64748b]">ממתינות לאישור</div>
           </div>
-          <div className="text-xl font-bold text-[#1e293b]">{pendingTransfers}</div>
+          <div className="text-lg md:text-xl font-bold text-[#1e293b]">{pendingTransfers}</div>
           <div className="text-xs text-[#94a3b8] mt-1">העברות</div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-[#f8f9fc] p-1 rounded-xl w-fit flex-wrap">
+      <div className="flex gap-1 mb-6 bg-[#f8f9fc] p-1 rounded-xl w-full sm:w-fit flex-wrap">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -1033,8 +1033,8 @@ export default function BankingPage() {
 
       {/* ══ MODAL: Add Bank Account ══ */}
       {showAccountModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6" dir="rtl">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 max-h-[90vh] overflow-y-auto" dir="rtl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-[#1e293b]">הוספת חשבון בנק</h3>
               <button onClick={() => setShowAccountModal(false)} className="p-2 hover:bg-[#f8f9fc] rounded-lg">
@@ -1096,8 +1096,8 @@ export default function BankingPage() {
 
       {/* ══ MODAL: New Transfer ══ */}
       {showTransferModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" dir="rtl">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 max-h-[90vh] overflow-y-auto" dir="rtl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-[#1e293b]">ביצוע העברה בנקאית</h3>
               <button onClick={() => setShowTransferModal(false)} className="p-2 hover:bg-[#f8f9fc] rounded-lg">
@@ -1227,8 +1227,8 @@ export default function BankingPage() {
 
       {/* ══ MODAL: Add Expense ══ */}
       {showExpenseModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6" dir="rtl">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 max-h-[90vh] overflow-y-auto" dir="rtl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-[#1e293b]">הוספת הוצאה</h3>
               <button onClick={() => setShowExpenseModal(false)} className="p-2 hover:bg-[#f8f9fc] rounded-lg">
@@ -1286,8 +1286,8 @@ export default function BankingPage() {
 
       {/* ══ MODAL: Bank Scraper Connect ══ */}
       {showBankConnectModal && selectedBankForConnect && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6" dir="rtl">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 max-h-[90vh] overflow-y-auto" dir="rtl">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{selectedBankForConnect.icon}</span>
@@ -1335,8 +1335,8 @@ export default function BankingPage() {
 
       {/* ══ MODAL: OCR Invoice Scanner ══ */}
       {showOcrModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6" dir="rtl">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 max-h-[90vh] overflow-y-auto" dir="rtl">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-lg font-bold text-[#1e293b]">📸 סריקת חשבונית</h3>

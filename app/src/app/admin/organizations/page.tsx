@@ -183,7 +183,7 @@ export default function AdminOrganizationsPage() {
               placeholder="חיפוש ארגון..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pr-9 pl-4 py-2 text-sm border border-[#e8ecf4] rounded-xl bg-[#f8f9fc] focus:outline-none focus:border-[#2563eb] focus:bg-white transition-all w-56"
+              className="pr-9 pl-4 py-2 text-sm border border-[#e8ecf4] rounded-xl bg-[#f8f9fc] focus:outline-none focus:border-[#2563eb] focus:bg-white transition-all w-full sm:w-56"
             />
           </div>
           <button onClick={openAddModal} className="btn-primary flex items-center gap-2">
@@ -198,15 +198,16 @@ export default function AdminOrganizationsPage() {
             {search ? "לא נמצאו ארגונים התואמים לחיפוש" : "אין נתונים"}
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#e8ecf4]">
                 <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">ארגון</th>
                 <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">מס׳ רישום</th>
                 <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">משתמשים</th>
-                <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">אוטומציות</th>
-                <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">תרומות</th>
-                <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">תאריך הצטרפות</th>
+                <th className="hidden md:table-cell text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">אוטומציות</th>
+                <th className="hidden md:table-cell text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">תרומות</th>
+                <th className="hidden md:table-cell text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">תאריך הצטרפות</th>
                 <th className="text-right p-4 text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">פעולות</th>
               </tr>
             </thead>
@@ -223,9 +224,9 @@ export default function AdminOrganizationsPage() {
                   </td>
                   <td className="p-4 text-[13px] text-[#64748b]">{org.number ?? "—"}</td>
                   <td className="p-4 text-[13px] text-[#1e293b]">{org.users}</td>
-                  <td className="p-4 text-[13px] text-[#1e293b]">{org.workflows}</td>
-                  <td className="p-4 text-[13px] text-[#1e293b]">{org.donations}</td>
-                  <td className="p-4 text-[13px] text-[#64748b]">
+                  <td className="hidden md:table-cell p-4 text-[13px] text-[#1e293b]">{org.workflows}</td>
+                  <td className="hidden md:table-cell p-4 text-[13px] text-[#1e293b]">{org.donations}</td>
+                  <td className="hidden md:table-cell p-4 text-[13px] text-[#64748b]">
                     {org.createdAt ? new Date(org.createdAt).toLocaleDateString("he-IL") : "—"}
                   </td>
                   <td className="p-4">
@@ -255,7 +256,7 @@ export default function AdminOrganizationsPage() {
                         href={`/portal?org=${org.id}`}
                         className="inline-flex items-center gap-1.5 text-[12px] text-[#2563eb] font-semibold hover:underline mr-2"
                       >
-                        <ExternalLink size={12} /> פתח בפורטל
+                        <ExternalLink size={12} /> <span className="hidden md:inline">פתח בפורטל</span>
                       </a>
                     </div>
                   </td>
@@ -263,13 +264,14 @@ export default function AdminOrganizationsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
       {/* Add Organization Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
-          <div className="bg-white rounded-2xl border border-[#e8ecf4] w-full max-w-md p-6" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowAddModal(false)}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl border border-[#e8ecf4] w-full sm:max-w-md p-6 max-h-[90vh] overflow-y-auto" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-bold text-[#1e293b]">הוסף ארגון חדש</h3>
               <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-lg hover:bg-[#f8f9fc] text-[#64748b]">
@@ -321,8 +323,8 @@ export default function AdminOrganizationsPage() {
 
       {/* Edit Organization Modal */}
       {showEditModal && selectedOrg && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowEditModal(false)}>
-          <div className="bg-white rounded-2xl border border-[#e8ecf4] w-full max-w-md p-6" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowEditModal(false)}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl border border-[#e8ecf4] w-full sm:max-w-md p-6 max-h-[90vh] overflow-y-auto" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-bold text-[#1e293b]">עריכת ארגון</h3>
               <button onClick={() => setShowEditModal(false)} className="p-1.5 rounded-lg hover:bg-[#f8f9fc] text-[#64748b]">
@@ -372,8 +374,8 @@ export default function AdminOrganizationsPage() {
 
       {/* Organization Details Modal */}
       {showDetailsModal && selectedOrg && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowDetailsModal(false)}>
-          <div className="bg-white rounded-2xl border border-[#e8ecf4] w-full max-w-md p-6" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowDetailsModal(false)}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl border border-[#e8ecf4] w-full sm:max-w-md p-6 max-h-[90vh] overflow-y-auto" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-bold text-[#1e293b]">פרטי ארגון</h3>
               <button onClick={() => setShowDetailsModal(false)} className="p-1.5 rounded-lg hover:bg-[#f8f9fc] text-[#64748b]">
@@ -432,8 +434,8 @@ export default function AdminOrganizationsPage() {
 
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && selectedOrg && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="bg-white rounded-2xl border border-[#e8ecf4] w-full max-w-sm p-6" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl border border-[#e8ecf4] w-full sm:max-w-sm p-6 max-h-[90vh] overflow-y-auto" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-[#fef2f2] flex items-center justify-center">
                 <Trash2 size={18} className="text-[#e8445a]" />

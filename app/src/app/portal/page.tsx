@@ -424,12 +424,12 @@ export default function PortalHomePage() {
           גישה מהירה
         </h2>
 
-        <div className="flex flex-wrap justify-center gap-3 md:gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:flex md:flex-wrap justify-center gap-2 md:gap-4">
           {QUICK_ACTIONS.map((action, i) => (
             <Link
               key={action.href}
               href={action.href}
-              className="anim-fade-scale group flex items-center gap-3 bg-white rounded-2xl px-5 py-3.5 border border-[#e8ecf4] hover:border-[#cbd5e1] hover-lift transition-all"
+              className="anim-fade-scale group flex flex-col md:flex-row items-center gap-1.5 md:gap-3 bg-white rounded-2xl px-3 py-2.5 md:px-5 md:py-3.5 border border-[#e8ecf4] hover:border-[#cbd5e1] hover-lift transition-all"
               style={{
                 animationDelay: `${0.4 + i * 0.06}s`,
                 boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
@@ -441,7 +441,7 @@ export default function PortalHomePage() {
               >
                 <action.icon size={18} style={{ color: action.color }} strokeWidth={1.8} />
               </div>
-              <span className="text-[13px] font-bold text-[#1e293b]">{action.label}</span>
+              <span className="text-[11px] md:text-[13px] font-bold text-[#1e293b]">{action.label}</span>
             </Link>
           ))}
         </div>

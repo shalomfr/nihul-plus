@@ -102,4 +102,4 @@ export const NAV_LINKS = [
   { label: "צור קשר", href: "#contact" },
 ];
 
-export const APP_URL = "https://matefet-app.azurewebsites.net";
+export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://matefet-6sgd.onrender.com";

@@ -90,7 +90,7 @@ export default function DataTable({ columns, data, title, action, rowActions }: 
         </div>
       )}
       <div className="overflow-x-auto p-5">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse min-w-[600px]">
           <thead>
             <tr>
               {columns.map((col) => (

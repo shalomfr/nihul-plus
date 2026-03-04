@@ -154,7 +154,7 @@ export default function Topbar({ title, subtitle }: { title: string; subtitle?: 
 
           {/* Notifications dropdown */}
           {notifOpen && (
-            <div className="absolute left-0 top-full mt-2 w-80 bg-white rounded-xl border border-[#e8ecf4] shadow-lg z-50 overflow-hidden">
+            <div className="absolute left-0 top-full mt-2 w-[min(20rem,calc(100vw-2rem))] bg-white rounded-xl border border-[#e8ecf4] shadow-lg z-50 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#e8ecf4]">
                 <span className="text-[14px] font-semibold text-[#1e293b]">התראות</span>
                 {unreadCount > 0 && (
@@ -219,7 +219,7 @@ export default function Topbar({ title, subtitle }: { title: string; subtitle?: 
           </button>
 
           {userOpen && (
-            <div className="absolute left-0 top-full mt-2 w-52 bg-white rounded-xl border border-[#e8ecf4] shadow-lg z-50 overflow-hidden">
+            <div className="absolute left-0 top-full mt-2 w-[min(13rem,calc(100vw-2rem))] bg-white rounded-xl border border-[#e8ecf4] shadow-lg z-50 overflow-hidden">
               <div className="px-4 py-3 border-b border-[#e8ecf4]">
                 <div className="flex items-center gap-2.5">
                   <div

@@ -8,7 +8,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <TourProvider tourId="admin" steps={adminTourSteps}>
       <div className="min-h-screen">
         <AdminSidebar />
-        <main className="md:mr-60 min-h-screen overflow-y-auto pt-16 md:pt-6">{children}</main>
+        <main className="md:mr-60 min-h-screen overflow-y-auto pt-20 md:pt-6">{children}</main>
         <OnboardingTour />
       </div>
     </TourProvider>

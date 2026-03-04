@@ -240,8 +240,8 @@ export default function PortalReportsPage() {
 
                     {/* Expanded budget lines */}
                     {isExpanded && r.lines.length > 0 && (
-                      <div className="bg-[#f8f9fc] border-t border-[#e8ecf4] px-5 py-3">
-                        <table className="w-full text-[12px]">
+                      <div className="bg-[#f8f9fc] border-t border-[#e8ecf4] px-5 py-3 overflow-x-auto">
+                        <table className="w-full text-[12px] min-w-[300px]">
                           <thead>
                             <tr className="text-[#64748b]">
                               <th className="text-right font-semibold pb-2">קטגוריה</th>
