@@ -149,7 +149,7 @@ export default function SettingsPage() {
       </div>
 
       {/* WhatsApp Card */}
-      <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+      <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden" data-tour="settings-whatsapp" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
         {/* Header */}
         <div className="px-6 py-5 border-b border-[#f1f5f9] flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-[#dcfce7] flex items-center justify-center">
@@ -297,7 +297,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Email Templates Card */}
-      <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+      <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden" data-tour="settings-email-templates" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
         <div className="px-6 py-5 border-b border-[#f1f5f9] flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-[#fef3c7] flex items-center justify-center">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

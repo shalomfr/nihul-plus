@@ -119,7 +119,7 @@ export default function AccountantPage() {
       </Link>
 
       {/* Period selector */}
-      <div className="bg-white rounded-2xl border border-[#e8ecf4] p-4 mb-6 flex flex-wrap items-center gap-3" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+      <div className="bg-white rounded-2xl border border-[#e8ecf4] p-4 mb-6 flex flex-wrap items-center gap-3" data-tour="accountant-period" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
         <span className="text-sm font-medium text-[#64748b]">תקופה:</span>
         {(["month", "quarter", "year"] as PeriodPreset[]).map(p => (
           <button
@@ -149,7 +149,7 @@ export default function AccountantPage() {
       ) : summary ? (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" data-tour="accountant-summary">
             <div className="bg-white rounded-2xl border border-[#e8ecf4] p-5" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-xl bg-[#f0fdf4] flex items-center justify-center">

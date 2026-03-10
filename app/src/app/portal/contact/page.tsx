@@ -90,7 +90,7 @@ export default function PortalContactPage() {
 
       <div className="max-w-[600px]">
         {/* ─── CONTACT FORM ─── */}
-        <div className="anim-fade-up delay-2 bg-white rounded-2xl p-6 border border-[#e8ecf4] hover-lift mb-6" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+        <div className="anim-fade-up delay-2 bg-white rounded-2xl p-6 border border-[#e8ecf4] hover-lift mb-6" data-tour="contact-form" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-[#eff6ff] flex items-center justify-center">
               <MessageCircle size={20} className="text-[#2563eb]" />

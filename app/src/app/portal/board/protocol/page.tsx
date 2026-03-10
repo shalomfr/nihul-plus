@@ -161,7 +161,7 @@ export default function ProtocolGeneratorPage() {
   // ─── STEP 1: SELECT MEETING ───
   if (step === "select") {
     return (
-      <div className="px-4 md:px-8 pb-6 md:pb-8">
+      <div data-tour="board-protocol" className="px-4 md:px-8 pb-6 md:pb-8">
         <Topbar title="יצירת פרוטוקול" subtitle="שאלון חכם ליצירת פרוטוקול ישיבה" />
 
         <div className="max-w-[600px] mx-auto mt-4">
@@ -241,7 +241,7 @@ export default function ProtocolGeneratorPage() {
   // ─── STEP 2: CHAT / QUESTIONNAIRE ───
   if (step === "chat") {
     return (
-      <div className="px-4 md:px-8 pb-6 md:pb-8">
+      <div data-tour="board-protocol" className="px-4 md:px-8 pb-6 md:pb-8">
         <Topbar title="שאלון חכם" subtitle={selectedMeeting ? selectedMeeting.title : "פרוטוקול חופשי"} />
 
         <div className="max-w-[600px] mx-auto mt-4">
@@ -340,7 +340,7 @@ export default function ProtocolGeneratorPage() {
 
   // ─── STEP 3: RESULT ───
   return (
-    <div className="px-4 md:px-8 pb-6 md:pb-8">
+    <div data-tour="board-protocol" className="px-4 md:px-8 pb-6 md:pb-8">
       <Topbar title="הפרוטוקול מוכן!" subtitle={selectedMeeting?.title ?? "פרוטוקול חופשי"} />
 
       <div className="max-w-[700px] mx-auto mt-4">

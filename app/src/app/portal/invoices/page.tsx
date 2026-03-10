@@ -235,7 +235,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* ── Action buttons ── */}
-      <div className="flex flex-wrap gap-2 mb-5">
+      <div className="flex flex-wrap gap-2 mb-5" data-tour="invoices-actions">
         <button
           onClick={() => fileRef.current?.click()}
           className="flex items-center gap-2 bg-[#ea580c] hover:bg-[#c2410c] text-white font-bold px-4 py-2.5 rounded-xl transition-colors text-sm"
@@ -283,7 +283,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* ── Expenses list ── */}
-      <div className="bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+      <div className="bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden" data-tour="invoices-list" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
         {loading ? (
           <div className="flex items-center justify-center py-16 gap-3 text-[#94a3b8]">
             <Loader2 size={20} className="animate-spin" />

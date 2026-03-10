@@ -151,7 +151,7 @@ export default function BankSyncPage() {
     <div className="px-4 md:px-8 pb-6 md:pb-8">
       <Topbar title="סנכרון בנק" subtitle="חבר את חשבון הבנק שלך לקבלת נתונים אוטומטית" />
 
-      <div className="max-w-[700px]">
+      <div className="max-w-[700px]" data-tour="bank-sync-connections">
         {/* ─── EXISTING CONNECTIONS ─── */}
         {loading ? (
           <div className="flex items-center justify-center h-48">

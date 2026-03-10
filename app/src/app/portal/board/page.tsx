@@ -254,7 +254,7 @@ export default function PortalBoardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
         {/* Board Members */}
-        <div className="anim-fade-up delay-1 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+        <div data-tour="board-members" className="anim-fade-up delay-1 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[15px] font-bold text-[#1e293b] flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
@@ -301,7 +301,7 @@ export default function PortalBoardPage() {
 
         {/* Next Meeting + Stats */}
         <div>
-          <div className="anim-fade-up delay-2 bg-white rounded-2xl p-5 border border-[#e8ecf4] mb-6 hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+          <div data-tour="board-next-meeting" className="anim-fade-up delay-2 bg-white rounded-2xl p-5 border border-[#e8ecf4] mb-6 hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[15px] font-bold text-[#1e293b] flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
@@ -375,7 +375,7 @@ export default function PortalBoardPage() {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3">
+          <div data-tour="board-stats" className="grid grid-cols-2 gap-3">
             <div className="anim-fade-scale delay-3 bg-white rounded-2xl p-5 border border-[#e8ecf4] text-center hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
               <div className="text-[28px] font-bold text-[#2563eb]">{totalMeetings}</div>
               <div className="text-[11px] text-[#64748b] mt-1">ישיבות</div>
@@ -389,7 +389,7 @@ export default function PortalBoardPage() {
       </div>
 
       {/* Past Meetings */}
-      <div className="anim-fade-up delay-4 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+      <div data-tour="board-past-meetings" className="anim-fade-up delay-4 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[15px] font-bold text-[#1e293b] flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
@@ -443,7 +443,7 @@ export default function PortalBoardPage() {
 
       {/* ─── GOVERNANCE ITEMS ─── */}
       {governanceItems.length > 0 && (
-        <div className="anim-fade-up delay-5 bg-white rounded-2xl p-5 border border-[#fde68a] mt-6 hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+        <div data-tour="board-governance" className="anim-fade-up delay-5 bg-white rounded-2xl p-5 border border-[#fde68a] mt-6 hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
           <h3 className="text-[15px] font-bold text-[#1e293b] mb-4 flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-[#fffbeb] flex items-center justify-center">
               <AlertTriangle size={16} className="text-[#d97706]" />

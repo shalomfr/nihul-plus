@@ -174,7 +174,7 @@ export default function InstitutionsPage() {
           <ArrowRight size={14} /> חזרה לדשבורד
         </Link>
 
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="institutions-bodies">
           {INSTITUTIONS.map((inst, i) => (
             <div
               key={inst.key}
@@ -235,6 +235,7 @@ export default function InstitutionsPage() {
           {/* Authority Email Bot */}
           <div
             className="anim-fade-up delay-4 bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden"
+            data-tour="institutions-email-bot"
             style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}
           >
             <button

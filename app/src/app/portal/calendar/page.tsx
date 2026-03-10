@@ -185,7 +185,7 @@ export default function PortalCalendarPage() {
 
       <div className="max-w-[800px]">
         {/* ─── MINI MONTH CALENDAR ─── */}
-        <div className="anim-fade-down bg-white rounded-2xl border border-[#e8ecf4] p-5 mb-6 hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+        <div data-tour="calendar-mini" className="anim-fade-down bg-white rounded-2xl border border-[#e8ecf4] p-5 mb-6 hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
           {/* Month navigation */}
           <div className="flex items-center justify-between mb-4">
             <button onClick={goToNextMonth} className="p-1.5 rounded-lg hover:bg-[#f8f9fc] text-[#64748b] hover:text-[#1e293b] transition-colors">
@@ -243,7 +243,7 @@ export default function PortalCalendarPage() {
         </div>
 
         {/* ─── EVENTS LIST ─── */}
-        <div className="anim-fade-up delay-2 bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+        <div data-tour="calendar-events" className="anim-fade-up delay-2 bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
           <div className="p-5 border-b border-[#e8ecf4] flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
               <Calendar size={16} className="text-[#2563eb]" />

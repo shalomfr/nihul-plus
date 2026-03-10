@@ -129,7 +129,7 @@ export default function PortalStatusPage() {
       <Topbar title="האם אני בסדר?" subtitle="מצב הציות והמסמכים הנדרשים לארגונך" />
 
       {/* ─── SUMMARY BAR ─── */}
-      <div className="anim-fade-down bg-white rounded-2xl border border-[#e8ecf4] p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+      <div data-tour="status-score" className="anim-fade-down bg-white rounded-2xl border border-[#e8ecf4] p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
         <div className="flex items-center gap-4 flex-1">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[#eff6ff] flex-shrink-0">
             <Shield size={24} className="text-[#2563eb]" />
@@ -152,7 +152,7 @@ export default function PortalStatusPage() {
       </div>
 
       {/* ─── CATEGORY MINI CARDS ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-6">
+      <div data-tour="status-categories" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-6">
         {CATEGORY_ORDER.filter(cat => items.some(i => i.category === cat)).map(cat => {
           const cs = getCategoryScore(cat);
           const color = getCategoryColor(cs.score);
@@ -175,7 +175,7 @@ export default function PortalStatusPage() {
       </div>
 
       {/* ─── FILTERS ─── */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      <div data-tour="status-filters" className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="flex gap-2">
           {([["all", "הכל"], ["attention", "דורשים טיפול"], ["ok", "הושלמו"]] as [FilterMode, string][]).map(([mode, label]) => (
             <button
@@ -208,7 +208,7 @@ export default function PortalStatusPage() {
       </div>
 
       {/* ─── ACCORDION CATEGORIES ─── */}
-      <div className="space-y-3">
+      <div data-tour="status-accordion" className="space-y-3">
         {Object.keys(byCategory).length === 0 ? (
           <div className="bg-white rounded-2xl border border-[#e8ecf4] p-8 text-center text-[#64748b]">לא נמצאו פריטים</div>
         ) : (

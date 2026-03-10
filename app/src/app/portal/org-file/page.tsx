@@ -75,7 +75,7 @@ export default function OrgFilePage() {
             <div className="animate-spin w-8 h-8 border-4 border-[#2563eb] border-t-transparent rounded-full" />
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3" data-tour="org-file-items">
             {ORG_FILE_ITEMS.map((item, i) => {
               const matched = getMatchedItem(item.label);
               const status = matched?.status ?? "MISSING";

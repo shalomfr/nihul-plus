@@ -156,7 +156,7 @@ export default function PortalReportsPage() {
 
       <div className="max-w-[800px]">
         {/* Export button */}
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4" data-tour="reports-export">
           <button
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2563eb] text-white text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors"
@@ -180,7 +180,7 @@ export default function PortalReportsPage() {
         )}
 
         {/* Budgets / Reports list */}
-        <div className="anim-fade-up delay-2 bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+        <div className="anim-fade-up delay-2 bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden hover-lift" data-tour="reports-budgets" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
           <div className="p-5 border-b border-[#e8ecf4] flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
               <BarChart2 size={16} className="text-[#2563eb]" />
@@ -278,7 +278,7 @@ export default function PortalReportsPage() {
 
         {/* Recent donations */}
         {donations.length > 0 && (
-          <div className="anim-fade-up delay-4 bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden hover-lift mt-6" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+          <div className="anim-fade-up delay-4 bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden hover-lift mt-6" data-tour="reports-donations" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
             <div className="p-5 border-b border-[#e8ecf4] flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-[#f0fdf4] flex items-center justify-center">
                 <FileText size={16} className="text-[#16a34a]" />

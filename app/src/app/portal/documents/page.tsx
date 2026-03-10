@@ -11,7 +11,14 @@ type Document = {
   description?: string;
   fileUrl?: string;
   mimeType?: string;
+  procedureKey?: string;
   createdAt: string;
+};
+
+const procedureLabels: Record<string, string> = {
+  procurement: "נוהל התקשרויות",
+  support: "נוהל תמיכות",
+  employment: "נוהל העסקת עובדים",
 };
 
 const categoryLabels: Record<string, string> = {
@@ -43,6 +50,7 @@ export default function PortalDocumentsPage() {
   const [uploadName, setUploadName] = useState("");
   const [uploadCategory, setUploadCategory] = useState("GENERAL");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadProcedure, setUploadProcedure] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,6 +106,7 @@ export default function PortalDocumentsPage() {
           category: uploadCategory,
           fileUrl: uploadData.data?.url,
           mimeType: uploadFile.type,
+          ...(uploadProcedure ? { procedureKey: uploadProcedure } : {}),
         }),
       });
       const docData = await docRes.json();
@@ -106,6 +115,7 @@ export default function PortalDocumentsPage() {
         setShowUploadModal(false);
         setUploadName("");
         setUploadCategory("GENERAL");
+        setUploadProcedure("");
         setUploadFile(null);
         fetchDocuments();
       } else {
@@ -150,7 +160,7 @@ export default function PortalDocumentsPage() {
 
       <div className="max-w-[800px]">
         {/* ─── SEARCH + UPLOAD BAR ─── */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div data-tour="documents-search" className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="flex items-center bg-white border border-[#e8ecf4] rounded-xl px-3 py-2 gap-2 flex-1">
             <Search size={14} className="text-[#64748b]" />
             <input
@@ -171,7 +181,7 @@ export default function PortalDocumentsPage() {
         </div>
 
         {/* ─── CATEGORY TABS ─── */}
-        <div className="flex gap-2 mb-4 flex-wrap">
+        <div data-tour="documents-tabs" className="flex gap-2 mb-4 flex-wrap">
           {categoryTabs.map(tab => (
             <button
               key={tab.key}
@@ -188,7 +198,7 @@ export default function PortalDocumentsPage() {
         </div>
 
         {/* ─── DOCUMENTS LIST ─── */}
-        <div className="anim-fade-up delay-2 bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+        <div data-tour="documents-list" className="anim-fade-up delay-2 bg-white rounded-2xl border border-[#e8ecf4] overflow-hidden hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
           <div className="p-5 border-b border-[#e8ecf4] flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
               <FolderOpen size={16} className="text-[#2563eb]" />
@@ -212,6 +222,9 @@ export default function PortalDocumentsPage() {
                       <div className="text-[13px] font-semibold text-[#1e293b]">{doc.name}</div>
                       <div className="text-[11px] text-[#64748b]">
                         {getFileType(doc)} · {categoryLabels[doc.category] ?? doc.category} · {new Date(doc.createdAt).toLocaleDateString("he-IL")}
+                        {doc.procedureKey && procedureLabels[doc.procedureKey] && (
+                          <span className="mr-1 text-[#2563eb] font-medium"> · {procedureLabels[doc.procedureKey]}</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -269,6 +282,19 @@ export default function PortalDocumentsPage() {
                   <option value="COMPLIANCE">ציות</option>
                   <option value="BOARD">ועד</option>
                   <option value="GENERAL">כללי</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-[#1e293b] mb-2">קישור לנוהל (אופציונלי)</label>
+                <select
+                  value={uploadProcedure}
+                  onChange={e => setUploadProcedure(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-[#e8ecf4] bg-white text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[13px]"
+                >
+                  <option value="">ללא קישור</option>
+                  <option value="procurement">נוהל התקשרויות</option>
+                  <option value="support">נוהל תמיכות</option>
+                  <option value="employment">נוהל העסקת עובדים</option>
                 </select>
               </div>
               <div>

@@ -30,6 +30,7 @@ export default function AdvisorPage() {
         {/* ─── ADVISOR CONTACT ─── */}
         <div
           className="anim-fade-up delay-1 bg-white rounded-2xl p-6 border border-[#e8ecf4] hover-lift mb-4"
+          data-tour="advisor-contact"
           style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}
         >
           <div className="flex items-center gap-3 mb-5">

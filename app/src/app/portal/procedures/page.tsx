@@ -49,7 +49,7 @@ export default function ProceduresPage() {
           <ArrowRight size={14} /> חזרה לדשבורד
         </Link>
 
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="procedures-list">
           {PROCEDURES.map((proc, i) => (
             <div
               key={proc.key}

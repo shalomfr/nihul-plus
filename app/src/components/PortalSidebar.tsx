@@ -176,10 +176,10 @@ export default function PortalSidebar() {
         <div className="px-3 pb-2">
           <button
             onClick={() => { setMobileOpen(false); startTour(); }}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-medium text-[#64748b] hover:text-[#2563eb] hover:bg-[#eff6ff] transition-all"
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold text-white bg-gradient-to-l from-[#2563eb] to-[#7c3aed] hover:opacity-90 transition-all"
           >
             <Compass size={16} />
-            <span>סיור מודרך</span>
+            <span>סיור מודרך מלא</span>
           </button>
         </div>
 

@@ -148,7 +148,7 @@ export default function AutomationsPage() {
       )}
 
       {/* Automation cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-tour="automations-cards">
         {AUTOMATIONS.map((automation) => (
           <div
             key={automation.id}

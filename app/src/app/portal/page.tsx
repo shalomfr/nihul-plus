@@ -186,7 +186,7 @@ export default function PortalHomePage() {
       </div>
 
       {/* ═══ MAIN STATS SECTION ═══ */}
-      <div className="w-full max-w-[960px] bg-white rounded-[28px] border border-[#e8ecf4] p-6 md:p-8 mb-5 anim-fade-up"
+      <div data-tour="portal-stats" className="w-full max-w-[960px] bg-white rounded-[28px] border border-[#e8ecf4] p-6 md:p-8 mb-5 anim-fade-up"
         style={{ boxShadow: "0 2px 20px rgba(0,0,0,0.03)" }}>
 
         <div className="text-center mb-7">
@@ -208,6 +208,7 @@ export default function PortalHomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
             {/* Compliance Card - HIGHLIGHTED */}
             <Link
+              data-tour="dashboard-compliance-card"
               href="/portal/status"
               className="group relative rounded-[20px] p-6 bg-[#1e293b] text-white border-2 border-[#334155] hover:border-[#475569] transition-all md:scale-[1.03] md:-translate-y-1 anim-fade-scale"
               style={{ boxShadow: "0 12px 40px rgba(30,41,59,0.25)" }}
@@ -255,6 +256,7 @@ export default function PortalHomePage() {
 
             {/* Financial Card */}
             <Link
+              data-tour="dashboard-financial-card"
               href="/portal/reports"
               className="group relative rounded-[20px] p-6 bg-[#f8f9fc] border-2 border-[#e8ecf4] hover:border-[#cbd5e1] hover:bg-white transition-all anim-fade-scale delay-1"
               style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.03)" }}
@@ -342,7 +344,7 @@ export default function PortalHomePage() {
 
       {/* ═══ ALERTS & UPCOMING ═══ */}
       {stats && (stats.compliance.expiringSoon > 0 || stats.board.upcomingMeetings.length > 0 || stats.notifications.length > 0) && (
-        <div className="w-full max-w-[960px] grid grid-cols-1 md:grid-cols-2 gap-5 mb-5 anim-fade-up delay-2">
+        <div data-tour="dashboard-alerts" className="w-full max-w-[960px] grid grid-cols-1 md:grid-cols-2 gap-5 mb-5 anim-fade-up delay-2">
 
           {/* Upcoming items */}
           {(stats.compliance.expiringSoon > 0 || stats.board.upcomingMeetings.length > 0) && (
@@ -424,7 +426,7 @@ export default function PortalHomePage() {
           גישה מהירה
         </h2>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:flex md:flex-wrap justify-center gap-2 md:gap-4">
+        <div data-tour="dashboard-quick-actions" className="grid grid-cols-3 sm:grid-cols-4 md:flex md:flex-wrap justify-center gap-2 md:gap-4">
           {QUICK_ACTIONS.map((action, i) => (
             <Link
               key={action.href}

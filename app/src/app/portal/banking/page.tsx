@@ -582,7 +582,7 @@ export default function BankingPage() {
 
       {/* ── ACCOUNTS TAB ── */}
       {tab === "accounts" && (
-        <div className="space-y-6">
+        <div className="space-y-6" data-tour="banking-accounts">
           {/* Bank tiles grid */}
           <div>
             <div className="text-sm font-semibold text-[#1e293b] mb-3">חבר את חשבון הבנק שלך — לחץ על הבנק לחיבור אוטומטי:</div>
@@ -702,7 +702,7 @@ export default function BankingPage() {
 
       {/* ── TRANSFERS TAB ── */}
       {tab === "transfers" && (
-        <div>
+        <div data-tour="banking-transfers">
           <div className="flex justify-end mb-4">
             <button
               onClick={() => setShowTransferModal(true)}
@@ -904,7 +904,7 @@ export default function BankingPage() {
 
       {/* ── TRANSACTIONS TAB ── */}
       {tab === "transactions" && (
-        <div>
+        <div data-tour="banking-transactions">
           <div className="flex items-center gap-3 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
               <select
