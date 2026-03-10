@@ -32,6 +32,7 @@ export const PUT = withErrorHandler(async (req: Request, { params }: { params: P
       ...(body.phone !== undefined ? { phone: body.phone } : {}),
       ...(body.isActive !== undefined ? { isActive: body.isActive } : {}),
       ...(body.isAuthorizedSignatory !== undefined ? { isAuthorizedSignatory: body.isAuthorizedSignatory } : {}),
+      ...(body.signatureFileId !== undefined ? { signatureFileId: body.signatureFileId } : {}),
     },
   });
 

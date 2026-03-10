@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Topbar from "@/components/Topbar";
-import { Users, Calendar, Download, Clock, UserCheck, Crown, User, CheckCircle2, Plus, X, AlertTriangle, Sparkles } from "lucide-react";
+import { Users, Calendar, Download, Clock, UserCheck, Crown, User, CheckCircle2, Plus, X, AlertTriangle, Sparkles, PenTool, Upload, Trash2 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { type ComplianceItem } from "@/lib/smart-actions";
 import HandleNowButton from "@/components/HandleNowButton";
@@ -16,6 +16,7 @@ type BoardMember = {
   phone?: string;
   isActive: boolean;
   startDate?: string;
+  signatureFileId?: string | null;
 };
 
 type BoardMeeting = {
@@ -84,6 +85,10 @@ export default function PortalBoardPage() {
   const [memberEmail, setMemberEmail] = useState("");
   const [memberPhone, setMemberPhone] = useState("");
   const [memberSubmitting, setMemberSubmitting] = useState(false);
+
+  // Signature
+  const [signatureMember, setSignatureMember] = useState<BoardMember | null>(null);
+  const [signatureUploading, setSignatureUploading] = useState(false);
 
   const fetchData = () => {
     Promise.all([
@@ -189,6 +194,46 @@ export default function PortalBoardPage() {
     }
   };
 
+  const handleUploadSignature = async (memberId: string, file: File) => {
+    setSignatureUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`/api/board/members/${memberId}/signature`, {
+        method: "POST",
+        body: formData,
+      });
+      const result = await res.json();
+      if (result.success) {
+        showSuccess("חתימה הועלתה בהצלחה");
+        setSignatureMember(null);
+        fetchData();
+      } else {
+        showError(result.error || "שגיאה בהעלאת החתימה");
+      }
+    } catch {
+      showError("שגיאה בהעלאת החתימה");
+    } finally {
+      setSignatureUploading(false);
+    }
+  };
+
+  const handleDeleteSignature = async (memberId: string) => {
+    try {
+      const res = await fetch(`/api/board/members/${memberId}/signature`, { method: "DELETE" });
+      const result = await res.json();
+      if (result.success) {
+        showSuccess("החתימה הוסרה");
+        setSignatureMember(null);
+        fetchData();
+      } else {
+        showError("שגיאה בהסרת החתימה");
+      }
+    } catch {
+      showError("שגיאה בהסרת החתימה");
+    }
+  };
+
   const handleDownloadProtocol = (meeting: BoardMeeting) => {
     if (meeting.protocol) {
       showSuccess("פרוטוקול ישיבה — הורדה תהיה זמינה בקרוב");
@@ -289,9 +334,20 @@ export default function PortalBoardPage() {
                         </div>
                       </div>
                     </div>
-                    {member.phone && (
-                      <div className="text-[11px] text-[#64748b]">{member.phone}</div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {member.signatureFileId && (
+                        <span className="text-[10px] font-semibold text-[#16a34a] bg-[#f0fdf4] px-2 py-0.5 rounded-md border border-[#bbf7d0]">
+                          חתימה
+                        </span>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSignatureMember(member); }}
+                        className="p-1.5 rounded-lg hover:bg-[#eff6ff] text-[#94a3b8] hover:text-[#2563eb] transition-colors"
+                        title="ניהול חתימה"
+                      >
+                        <PenTool size={14} />
+                      </button>
+                    </div>
                   </div>
                 );
               })
@@ -592,6 +648,85 @@ export default function PortalBoardPage() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── SIGNATURE MODAL ─── */}
+      {signatureMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm mx-4 border border-[#e8ecf4]" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-[16px] font-bold text-[#1e293b]">חתימת {signatureMember.name}</h3>
+              <button onClick={() => setSignatureMember(null)} className="p-1.5 rounded-lg hover:bg-[#f8f9fc] text-[#64748b] hover:text-[#1e293b] transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+
+            {signatureMember.signatureFileId ? (
+              <div className="space-y-4">
+                <div className="bg-[#f8f9fc] rounded-xl p-4 border border-[#e8ecf4] flex items-center justify-center">
+                  <img
+                    src={`/api/files/${signatureMember.signatureFileId}`}
+                    alt="חתימה"
+                    className="max-h-[80px] object-contain"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <label className="flex-1 btn-primary flex items-center justify-center gap-2 cursor-pointer text-[13px]">
+                    <Upload size={14} />
+                    החלף חתימה
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUploadSignature(signatureMember.id, f);
+                      }}
+                    />
+                  </label>
+                  <button
+                    onClick={() => handleDeleteSignature(signatureMember.id)}
+                    className="px-4 py-2 rounded-xl border border-red-200 text-red-500 text-[13px] font-semibold hover:bg-red-50 transition-colors flex items-center gap-1.5"
+                  >
+                    <Trash2 size={14} />
+                    הסר
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-[#f8f9fc] rounded-xl p-6 border border-dashed border-[#d1d5db] text-center">
+                  <PenTool size={24} className="mx-auto text-[#94a3b8] mb-2" />
+                  <p className="text-[13px] text-[#64748b]">אין חתימה. העלה תמונת חתימה.</p>
+                  <p className="text-[11px] text-[#94a3b8] mt-1">PNG/JPG, עד 2MB</p>
+                </div>
+                <label className={`w-full btn-primary flex items-center justify-center gap-2 cursor-pointer text-[13px] ${signatureUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                  {signatureUploading ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                      מעלה...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={14} />
+                      העלה חתימה
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={signatureUploading}
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) handleUploadSignature(signatureMember.id, f);
+                    }}
+                  />
+                </label>
+              </div>
+            )}
           </div>
         </div>
       )}

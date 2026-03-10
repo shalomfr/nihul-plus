@@ -17,6 +17,7 @@ type BoardMember = {
   name: string;
   role: string;
   isActive: boolean;
+  signatureFileId?: string | null;
 };
 
 type Guest = { name: string; role: string };
@@ -189,6 +190,41 @@ export default function ProtocolGeneratorPage() {
             <div className="text-[13px] text-[#1e293b] whitespace-pre-wrap leading-relaxed" dir="rtl">
               {protocol}
             </div>
+
+            {/* Signatures Section */}
+            {(() => {
+              const signers = boardMembers.filter(m => selectedMembers.has(m.id));
+              if (signers.length === 0 && guests.length === 0) return null;
+              const allSigners = [
+                ...signers.map(m => ({ name: m.name, role: m.role, signatureFileId: m.signatureFileId })),
+                ...guests.map(g => ({ name: g.name, role: g.role, signatureFileId: null as string | null | undefined })),
+              ];
+              return (
+                <div className="mt-8 pt-6 border-t border-[#e8ecf4]">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6" dir="rtl">
+                    {allSigners.map((signer, i) => (
+                      <div key={i} className="flex flex-col items-center text-center">
+                        <div className="w-full h-[60px] flex items-end justify-center mb-2">
+                          {signer.signatureFileId ? (
+                            <img
+                              src={`/api/files/${signer.signatureFileId}`}
+                              alt={`חתימת ${signer.name}`}
+                              className="max-h-[55px] max-w-full object-contain"
+                            />
+                          ) : (
+                            <div className="w-full" />
+                          )}
+                        </div>
+                        <div className="w-full border-t border-[#1e293b] pt-2">
+                          <div className="text-[12px] font-semibold text-[#1e293b]">{signer.name}</div>
+                          <div className="text-[11px] text-[#64748b]">{signer.role}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
