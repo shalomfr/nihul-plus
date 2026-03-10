@@ -208,22 +208,15 @@ export async function scrapeBank(
 ): Promise<ScrapeResult> {
   const companyType = getCompanyType(companyId);
 
-  // Lazy-import heavy dependencies so the module doesn't crash on import
-  // when puppeteer/chromium binaries aren't available (e.g. local dev, GET endpoints)
-  const [{ createScraper, CompanyTypes }, chromiumModule] = await Promise.all([
-    import("israeli-bank-scrapers"),
-    import("@sparticuz/chromium"),
-  ]);
-  const chromium = chromiumModule.default;
-  const executablePath = await chromium.executablePath();
+  // Lazy-import so the module doesn't crash on import when puppeteer isn't available
+  const { createScraper, CompanyTypes } = await import("israeli-bank-scrapers");
 
   const scraper = createScraper({
     companyId: companyType as (typeof CompanyTypes)[keyof typeof CompanyTypes],
     startDate,
     combineInstallments: false,
     showBrowser: false,
-    executablePath,
-    args: chromium.args,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
     timeout: 120000, // 2 minutes — Israeli bank sites can be slow
   });
 

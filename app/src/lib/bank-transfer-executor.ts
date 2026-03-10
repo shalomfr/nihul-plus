@@ -94,12 +94,10 @@ const REAL_USER_AGENT =
 
 // ── Launch Puppeteer with stealth anti-detection ────────────────────────────
 async function launchBrowser(): Promise<{ browser: Browser; page: Page }> {
-  const [chromiumModule, puppeteerExtraModule, stealthModule] = await Promise.all([
-    import("@sparticuz/chromium"),
+  const [puppeteerExtraModule, stealthModule] = await Promise.all([
     import("puppeteer-extra"),
     import("puppeteer-extra-plugin-stealth"),
   ]);
-  const chromium = chromiumModule.default;
   const puppeteer = puppeteerExtraModule.default;
   const StealthPlugin = stealthModule.default;
 
@@ -107,11 +105,10 @@ async function launchBrowser(): Promise<{ browser: Browser; page: Page }> {
   puppeteer.use(StealthPlugin());
 
   const browser = await puppeteer.launch({
-    executablePath: await chromium.executablePath(),
     args: [
-      ...chromium.args,
       "--no-sandbox",
       "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
       // Anti-detection flags
       "--disable-blink-features=AutomationControlled",
       "--disable-features=IsolateOrigins,site-per-process",
