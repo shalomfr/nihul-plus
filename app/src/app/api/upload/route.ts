@@ -18,5 +18,5 @@ export const POST = withErrorHandler(async (req: Request) => {
     mimeType: file.type,
   });
 
-  return apiResponse(record, 201);
+  return apiResponse({ ...record, url: `/api/files/${record.id}` }, 201);
 });

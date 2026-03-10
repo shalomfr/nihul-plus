@@ -96,7 +96,7 @@ export default function PortalDocumentsPage() {
         body: JSON.stringify({
           name: uploadName.trim(),
           category: uploadCategory,
-          fileUrl: uploadData.url ?? uploadData.data?.url,
+          fileUrl: uploadData.data?.url,
           mimeType: uploadFile.type,
         }),
       });
