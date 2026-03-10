@@ -1,11 +1,15 @@
 import { requireManager, apiResponse, apiError, withErrorHandler } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 
-const OPENROUTER_API_KEY = "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";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
 
 type Message = { role: "user" | "assistant" | "system"; content: string };
 
 async function callOpenRouter(messages: Message[]) {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY is not configured");
+  }
+
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -22,11 +26,17 @@ async function callOpenRouter(messages: Message[]) {
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`OpenRouter error: ${res.status} — ${errText}`);
+    console.error("[OpenRouter] API error:", res.status, errText);
+    throw new Error(`OpenRouter error: ${res.status}`);
   }
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.content ?? "";
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) {
+    console.error("[OpenRouter] Empty response:", JSON.stringify(data));
+    throw new Error("Empty response from AI");
+  }
+  return content;
 }
 
 const SYSTEM_PROMPT = `אתה עוזר חכם ליצירת פרוטוקולים לישיבות ועד של עמותות בישראל.
@@ -72,7 +82,13 @@ export const POST = withErrorHandler(async (req: Request) => {
     ...messages,
   ];
 
-  const aiResponse = await callOpenRouter(fullMessages);
+  let aiResponse: string;
+  try {
+    aiResponse = await callOpenRouter(fullMessages);
+  } catch (err) {
+    console.error("[Protocol Generate] OpenRouter call failed:", err);
+    return apiError("שגיאה בחיבור ל-AI. ודא ש-OPENROUTER_API_KEY מוגדר.", 502);
+  }
 
   // Try to parse AI response as JSON
   let parsed;
@@ -86,7 +102,6 @@ export const POST = withErrorHandler(async (req: Request) => {
 
   // If protocol is generated and meetingId provided, save it
   if (parsed.type === "protocol" && meetingId) {
-    // Check if protocol already exists for this meeting
     const existing = await prisma.meetingProtocol.findUnique({
       where: { meetingId },
     });
@@ -105,7 +120,6 @@ export const POST = withErrorHandler(async (req: Request) => {
       });
     }
 
-    // Update meeting status to COMPLETED
     await prisma.boardMeeting.update({
       where: { id: meetingId },
       data: { status: "COMPLETED" },
