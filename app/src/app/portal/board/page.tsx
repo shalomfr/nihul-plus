@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import Topbar from "@/components/Topbar";
-import { Users, Calendar, Download, Clock, UserCheck, Crown, User, CheckCircle2, Plus, X, AlertTriangle } from "lucide-react";
+import { Users, Calendar, Download, Clock, UserCheck, Crown, User, CheckCircle2, Plus, X, AlertTriangle, Sparkles } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { type ComplianceItem } from "@/lib/smart-actions";
 import HandleNowButton from "@/components/HandleNowButton";
 import SmartActionsModal from "@/components/SmartActionsModal";
+import Link from "next/link";
 
 type BoardMember = {
   id: string;
@@ -389,12 +390,21 @@ export default function PortalBoardPage() {
 
       {/* Past Meetings */}
       <div className="anim-fade-up delay-4 bg-white rounded-2xl p-5 border border-[#e8ecf4] hover-lift" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
-        <h3 className="text-[15px] font-bold text-[#1e293b] mb-4 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
-            <Clock size={16} className="text-[#2563eb]" />
-          </div>
-          ישיבות אחרונות
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[15px] font-bold text-[#1e293b] flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-[#eff6ff] flex items-center justify-center">
+              <Clock size={16} className="text-[#2563eb]" />
+            </div>
+            ישיבות אחרונות
+          </h3>
+          <Link
+            href="/portal/board/protocol"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-l from-[#2563eb] to-[#7c3aed] text-white text-[11px] font-semibold hover:opacity-90 transition-opacity"
+          >
+            <Sparkles size={12} />
+            צור פרוטוקול
+          </Link>
+        </div>
         <div className="space-y-2">
           {pastMeetings.length === 0 ? (
             <div className="text-center py-6 text-[13px] text-[#64748b]">אין ישיבות קודמות</div>
