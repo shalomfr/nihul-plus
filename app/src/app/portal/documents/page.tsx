@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Topbar from "@/components/Topbar";
-import { FileText, FolderOpen, Download, Search, Upload, X, AlertCircle } from "lucide-react";
+import { FileText, FolderOpen, Download, Search, Upload, X, AlertCircle, Link2, Check } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
 type Document = {
@@ -11,14 +11,15 @@ type Document = {
   description?: string;
   fileUrl?: string;
   mimeType?: string;
-  procedureKey?: string;
   createdAt: string;
 };
 
-const procedureLabels: Record<string, string> = {
-  procurement: "נוהל התקשרויות",
-  support: "נוהל תמיכות",
-  employment: "נוהל העסקת עובדים",
+type ComplianceItem = {
+  id: string;
+  name: string;
+  category: string;
+  status: string;
+  documentUrl?: string | null;
 };
 
 const categoryLabels: Record<string, string> = {
@@ -27,6 +28,18 @@ const categoryLabels: Record<string, string> = {
   COMPLIANCE: "ציות",
   BOARD: "ועד",
   GENERAL: "כללי",
+};
+
+const complianceCategoryLabels: Record<string, string> = {
+  FOUNDING_DOCS: "מסמכי יסוד",
+  ANNUAL_OBLIGATIONS: "חובות שנתיות",
+  TAX_APPROVALS: "אישורי מס",
+  FINANCIAL_MGMT: "ניהול כספי",
+  DISTRIBUTION_DOCS: "מסמכי חלוקה",
+  GOVERNANCE: "ממשל תאגידי",
+  EMPLOYEES_VOLUNTEERS: "עובדים ומתנדבים",
+  INSURANCE: "ביטוחים",
+  GEMACH: 'גמ"ח',
 };
 
 const categoryTabs = [
@@ -50,9 +63,15 @@ export default function PortalDocumentsPage() {
   const [uploadName, setUploadName] = useState("");
   const [uploadCategory, setUploadCategory] = useState("GENERAL");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadProcedure, setUploadProcedure] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Link target state
+  const [complianceItems, setComplianceItems] = useState<ComplianceItem[]>([]);
+  const [linkTarget, setLinkTarget] = useState("");
+  const [linkSearch, setLinkSearch] = useState("");
+  const [showLinkDropdown, setShowLinkDropdown] = useState(false);
+  const linkDropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchDocuments = () => {
     fetch("/api/documents")
@@ -66,11 +85,48 @@ export default function PortalDocumentsPage() {
     fetchDocuments();
   }, []);
 
+  // Fetch compliance items when modal opens
+  useEffect(() => {
+    if (showUploadModal) {
+      fetch("/api/compliance")
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) setComplianceItems(res.data.items ?? []);
+        })
+        .catch(console.error);
+    }
+  }, [showUploadModal]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (linkDropdownRef.current && !linkDropdownRef.current.contains(e.target as Node)) {
+        setShowLinkDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   const filteredDocuments = documents.filter(doc => {
     if (search && !doc.name.toLowerCase().includes(search.toLowerCase())) return false;
     if (activeCategory !== "ALL" && doc.category !== activeCategory) return false;
     return true;
   });
+
+  // Group and filter compliance items
+  const filteredComplianceItems = complianceItems.filter(item =>
+    !linkSearch || item.name.includes(linkSearch)
+  );
+
+  const groupedItems = filteredComplianceItems.reduce<Record<string, ComplianceItem[]>>((acc, item) => {
+    const cat = item.category;
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {});
+
+  const selectedItemName = complianceItems.find(i => i.id === linkTarget)?.name ?? "";
 
   const handleUpload = async () => {
     if (!uploadName.trim()) {
@@ -97,6 +153,8 @@ export default function PortalDocumentsPage() {
         return;
       }
 
+      const fileUrl = uploadData.data?.url;
+
       // Step 2: Create the document record
       const docRes = await fetch("/api/documents", {
         method: "POST",
@@ -104,23 +162,33 @@ export default function PortalDocumentsPage() {
         body: JSON.stringify({
           name: uploadName.trim(),
           category: uploadCategory,
-          fileUrl: uploadData.data?.url,
+          fileUrl,
           mimeType: uploadFile.type,
-          ...(uploadProcedure ? { procedureKey: uploadProcedure } : {}),
         }),
       });
       const docData = await docRes.json();
-      if (docData.success) {
-        showSuccess("המסמך הועלה בהצלחה");
-        setShowUploadModal(false);
-        setUploadName("");
-        setUploadCategory("GENERAL");
-        setUploadProcedure("");
-        setUploadFile(null);
-        fetchDocuments();
-      } else {
+      if (!docData.success) {
         showError("שגיאה בשמירת המסמך");
+        return;
       }
+
+      // Step 3: Link to compliance item if selected
+      if (linkTarget && fileUrl) {
+        await fetch(`/api/compliance/${linkTarget}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documentUrl: fileUrl }),
+        });
+      }
+
+      showSuccess(linkTarget ? "המסמך הועלה וקושר בהצלחה" : "המסמך הועלה בהצלחה");
+      setShowUploadModal(false);
+      setUploadName("");
+      setUploadCategory("GENERAL");
+      setUploadFile(null);
+      setLinkTarget("");
+      setLinkSearch("");
+      fetchDocuments();
     } catch {
       showError("שגיאה בהעלאה");
     } finally {
@@ -135,7 +203,6 @@ export default function PortalDocumentsPage() {
       if (doc.mimeType.includes("word") || doc.mimeType.includes("document")) return "DOC";
       if (doc.mimeType.includes("image")) return "IMG";
     }
-    // Fallback: try to guess from fileUrl extension
     if (doc.fileUrl) {
       const ext = doc.fileUrl.split(".").pop()?.toUpperCase();
       if (ext) return ext.substring(0, 4);
@@ -222,9 +289,6 @@ export default function PortalDocumentsPage() {
                       <div className="text-[13px] font-semibold text-[#1e293b]">{doc.name}</div>
                       <div className="text-[11px] text-[#64748b]">
                         {getFileType(doc)} · {categoryLabels[doc.category] ?? doc.category} · {new Date(doc.createdAt).toLocaleDateString("he-IL")}
-                        {doc.procedureKey && procedureLabels[doc.procedureKey] && (
-                          <span className="mr-1 text-[#2563eb] font-medium"> · {procedureLabels[doc.procedureKey]}</span>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -252,10 +316,10 @@ export default function PortalDocumentsPage() {
       {/* ─── UPLOAD MODAL ─── */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 border border-[#e8ecf4]" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 border border-[#e8ecf4] max-h-[90vh] overflow-y-auto" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-[16px] font-bold text-[#1e293b]">העלאת מסמך</h3>
-              <button onClick={() => setShowUploadModal(false)} className="p-1.5 rounded-lg hover:bg-[#f8f9fc] text-[#64748b] hover:text-[#1e293b] transition-colors">
+              <button onClick={() => { setShowUploadModal(false); setLinkTarget(""); setLinkSearch(""); }} className="p-1.5 rounded-lg hover:bg-[#f8f9fc] text-[#64748b] hover:text-[#1e293b] transition-colors">
                 <X size={16} />
               </button>
             </div>
@@ -284,19 +348,78 @@ export default function PortalDocumentsPage() {
                   <option value="GENERAL">כללי</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-[13px] font-medium text-[#1e293b] mb-2">קישור לנוהל (אופציונלי)</label>
-                <select
-                  value={uploadProcedure}
-                  onChange={e => setUploadProcedure(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#e8ecf4] bg-white text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[13px]"
-                >
-                  <option value="">ללא קישור</option>
-                  <option value="procurement">נוהל התקשרויות</option>
-                  <option value="support">נוהל תמיכות</option>
-                  <option value="employment">נוהל העסקת עובדים</option>
-                </select>
+
+              {/* ─── LINK TO COMPLIANCE ITEM ─── */}
+              <div ref={linkDropdownRef} className="relative">
+                <label className="flex items-center gap-1.5 text-[13px] font-medium text-[#1e293b] mb-2">
+                  <Link2 size={13} />
+                  קשר לפריט באתר (אופציונלי)
+                </label>
+                {linkTarget ? (
+                  <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-[#2563eb]/30 bg-[#eff6ff] text-[13px]">
+                    <Check size={14} className="text-[#2563eb] flex-shrink-0" />
+                    <span className="text-[#1e293b] flex-1 truncate">{selectedItemName}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setLinkTarget(""); setLinkSearch(""); }}
+                      className="text-[#64748b] hover:text-[#1e293b] flex-shrink-0"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="relative">
+                      <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
+                      <input
+                        type="text"
+                        value={linkSearch}
+                        onChange={e => { setLinkSearch(e.target.value); setShowLinkDropdown(true); }}
+                        onFocus={() => setShowLinkDropdown(true)}
+                        placeholder="חפש פריט לקישור... (אישור ניכוי מס, סעיף 46...)"
+                        className="w-full pl-4 pr-9 py-3 rounded-xl border border-[#e8ecf4] bg-white text-[#1e293b] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[13px]"
+                      />
+                    </div>
+                    {showLinkDropdown && (
+                      <div className="absolute z-10 mt-1 w-full bg-white rounded-xl border border-[#e8ecf4] overflow-hidden" style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.1)", maxHeight: "240px", overflowY: "auto" }}>
+                        {Object.keys(groupedItems).length === 0 ? (
+                          <div className="p-3 text-[12px] text-[#64748b] text-center">לא נמצאו פריטים</div>
+                        ) : (
+                          Object.entries(groupedItems).map(([cat, items]) => (
+                            <div key={cat}>
+                              <div className="sticky top-0 bg-[#f8f9fc] px-3 py-1.5 text-[11px] font-bold text-[#64748b] border-b border-[#e8ecf4]">
+                                {complianceCategoryLabels[cat] ?? cat}
+                              </div>
+                              {items.map(item => (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setLinkTarget(item.id);
+                                    setShowLinkDropdown(false);
+                                    setLinkSearch("");
+                                  }}
+                                  className="w-full flex items-center justify-between px-3 py-2.5 text-right hover:bg-[#eff6ff] transition-colors border-b border-[#e8ecf4]/50 last:border-b-0"
+                                >
+                                  <span className="text-[12px] text-[#1e293b]">{item.name}</span>
+                                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${
+                                    item.status === "OK" ? "text-[#16a34a] bg-[#f0fdf4]" :
+                                    item.status === "WARNING" ? "text-[#d97706] bg-[#fffbeb]" :
+                                    "text-[#ef4444] bg-[#fef2f2]"
+                                  }`}>
+                                    {item.documentUrl ? "יש מסמך" : "חסר מסמך"}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
+
               <div>
                 <label className="block text-[13px] font-medium text-[#1e293b] mb-2">קובץ</label>
                 <input
