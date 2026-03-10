@@ -213,9 +213,10 @@ model Organization {
   phone     String?
   email     String?
   website   String?
-  logoUrl   String?  @map("logo_url")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  logoUrl      String?  @map("logo_url")
+  advisorPhone String?  @map("advisor_phone")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   users               User[]
   donors              Donor[]

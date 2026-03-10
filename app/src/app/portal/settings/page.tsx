@@ -38,6 +38,12 @@ export default function SettingsPage() {
   const [pairingCode, setPairingCode] = useState("");
   const [error, setError] = useState("");
 
+  // Advisor phone
+  const [advisorPhone, setAdvisorPhone] = useState("");
+  const [advisorPhoneSaved, setAdvisorPhoneSaved] = useState("");
+  const [advisorSaving, setAdvisorSaving] = useState(false);
+  const [advisorMsg, setAdvisorMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
   // Template email overrides state
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
   const [tmplLoading, setTmplLoading] = useState(true);
@@ -61,6 +67,43 @@ export default function SettingsPage() {
     const interval = setInterval(fetchStatus, 5000);
     return () => clearInterval(interval);
   }, [fetchStatus]);
+
+  // Fetch advisor phone
+  useEffect(() => {
+    fetch("/api/organization/advisor-phone")
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.data.advisorPhone) {
+          setAdvisorPhone(res.data.advisorPhone);
+          setAdvisorPhoneSaved(res.data.advisorPhone);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleSaveAdvisorPhone = async () => {
+    setAdvisorSaving(true);
+    setAdvisorMsg(null);
+    try {
+      const res = await fetch("/api/organization/advisor-phone", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ advisorPhone: advisorPhone.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAdvisorPhoneSaved(advisorPhone.trim());
+        setAdvisorMsg({ ok: true, text: "נשמר!" });
+        setTimeout(() => setAdvisorMsg(null), 3000);
+      } else {
+        setAdvisorMsg({ ok: false, text: data.error ?? "שגיאה" });
+      }
+    } catch {
+      setAdvisorMsg({ ok: false, text: "שגיאת רשת" });
+    } finally {
+      setAdvisorSaving(false);
+    }
+  };
 
   // Fetch templates
   useEffect(() => {
@@ -291,6 +334,51 @@ export default function SettingsPage() {
                   שירות WhatsApp לא מוגדר. הוסף WHATSAPP_SERVICE_URL ו-WHATSAPP_API_KEY למשתני הסביבה.
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Advisor Phone Card */}
+      <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+        <div className="px-6 py-5 border-b border-[#f1f5f9] flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-[#eff6ff] flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-bold text-[#1e293b]">מספר מלווה</h2>
+            <p className="text-sm text-[#64748b]">פניות מהפורטל יישלחו כהודעת WhatsApp למספר זה</p>
+          </div>
+          {advisorPhoneSaved && (
+            <div className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#dcfce7] text-[#16a34a]">
+              מוגדר
+            </div>
+          )}
+        </div>
+        <div className="p-6">
+          <div className="flex items-center gap-3">
+            <input
+              type="tel"
+              value={advisorPhone}
+              onChange={e => setAdvisorPhone(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") handleSaveAdvisorPhone(); }}
+              placeholder="0501234567"
+              className="flex-1 border border-[#e2e8f0] rounded-xl px-4 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-[#2563eb]"
+              dir="ltr"
+            />
+            <button
+              onClick={handleSaveAdvisorPhone}
+              disabled={advisorSaving || advisorPhone.trim() === advisorPhoneSaved}
+              className="px-5 py-3 bg-[#2563eb] text-white text-[13px] font-bold rounded-xl hover:bg-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {advisorSaving ? "שומר..." : "שמור"}
+            </button>
+          </div>
+          {advisorMsg && (
+            <div className={`mt-3 text-[13px] font-semibold ${advisorMsg.ok ? "text-[#16a34a]" : "text-[#dc2626]"}`}>
+              {advisorMsg.text}
             </div>
           )}
         </div>

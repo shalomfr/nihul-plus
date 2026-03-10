@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getAuthSession, requireManager, apiResponse, apiError, withErrorHandler } from "@/lib/api-helpers";
 import { markNotificationReadSchema } from "@/lib/validators";
+import { sendWhatsApp, isWhatsAppConfigured } from "@/lib/whatsapp";
 
 export const GET = withErrorHandler(async (req: Request) => {
   const user = await getAuthSession();
@@ -75,6 +76,29 @@ export const POST = withErrorHandler(async (req: Request) => {
       link: body.link,
     },
   });
+
+  // Send WhatsApp to advisor if configured
+  if (isWhatsAppConfigured() && user.organizationId) {
+    const org = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
+      select: { advisorPhone: true, name: true },
+    });
+
+    if (org?.advisorPhone) {
+      const waMessage = [
+        `📩 *פנייה חדשה מ${org.name}*`,
+        ``,
+        `*נושא:* ${body.title ?? "פנייה חדשה"}`,
+        `*הודעה:* ${body.message ?? ""}`,
+        ``,
+        `*שולח:* ${user.name} (${user.email})`,
+      ].join("\n");
+
+      sendWhatsApp(org.advisorPhone, waMessage).catch(err =>
+        console.error("[Contact] WhatsApp send failed:", err)
+      );
+    }
+  }
 
   return apiResponse(notification, 201);
 });
