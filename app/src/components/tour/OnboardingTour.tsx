@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, CheckCircle, List, SkipForward } from "lucide-react";
 import { useTour } from "./TourContext";
@@ -18,56 +18,100 @@ function getTargetRect(target: string): TooltipRect | null {
   return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
 }
 
-function calcTooltipStyle(targetRect: TooltipRect, position: string): React.CSSProperties {
-  const GAP = 12;
-  const tooltipW = 320;
-  const tooltipH = 220;
+/**
+ * Smart tooltip positioning — never goes off-screen.
+ * 1. Tries the requested position
+ * 2. If it doesn't fit, tries the opposite side
+ * 3. Final clamp to viewport edges
+ */
+function calcTooltipStyle(
+  targetRect: TooltipRect,
+  position: string,
+  tooltipHeight: number,
+): React.CSSProperties {
+  const GAP = 14;
+  const MARGIN = 12;
   const scrollY = window.scrollY;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  const tooltipW = Math.min(320, vw - MARGIN * 2);
+
+  // Target center in viewport
+  const targetCenterX = targetRect.left + targetRect.width / 2;
+  const targetCenterY = targetRect.top + targetRect.height / 2;
+
+  // Space available in each direction (viewport-relative)
+  const spaceBelow = vh - (targetRect.top + targetRect.height);
+  const spaceAbove = targetRect.top;
+  const spaceRight = vw - (targetRect.left + targetRect.width);
+  const spaceLeft = targetRect.left;
 
   let top: number;
   let left: number;
 
-  switch (position) {
+  // Determine best vertical placement
+  const wantsBottom = position.startsWith("bottom") || position === "right" || position === "left" || !position;
+  const fitsBelow = spaceBelow >= tooltipHeight + GAP;
+  const fitsAbove = spaceAbove >= tooltipHeight + GAP;
+  const fitsRight = spaceRight >= tooltipW + GAP;
+  const fitsLeft = spaceLeft >= tooltipW + GAP;
+
+  let finalPosition = position || "bottom";
+
+  // Auto-flip logic
+  if (finalPosition.startsWith("bottom") && !fitsBelow && fitsAbove) {
+    finalPosition = finalPosition.replace("bottom", "top");
+  } else if (finalPosition.startsWith("top") && !fitsAbove && fitsBelow) {
+    finalPosition = finalPosition.replace("top", "bottom");
+  } else if (finalPosition === "right" && !fitsRight) {
+    finalPosition = fitsLeft ? "left" : fitsBelow ? "bottom" : "top";
+  } else if (finalPosition === "left" && !fitsLeft) {
+    finalPosition = fitsRight ? "right" : fitsBelow ? "bottom" : "top";
+  } else if (finalPosition.startsWith("bottom") && !fitsBelow && !fitsAbove) {
+    // No space above or below — place beside
+    finalPosition = fitsRight ? "right" : fitsLeft ? "left" : "bottom";
+  } else if (finalPosition.startsWith("top") && !fitsAbove && !fitsBelow) {
+    finalPosition = fitsRight ? "right" : fitsLeft ? "left" : "top";
+  }
+
+  switch (finalPosition) {
     case "bottom":
     case "bottom-right":
       top = targetRect.top + targetRect.height + GAP + scrollY;
-      left = Math.min(targetRect.left, vw - tooltipW - 16);
+      left = targetCenterX - tooltipW / 2;
       break;
     case "bottom-left":
       top = targetRect.top + targetRect.height + GAP + scrollY;
-      left = Math.max(16, targetRect.left + targetRect.width - tooltipW);
+      left = targetCenterX - tooltipW / 2;
       break;
     case "top":
     case "top-right":
-      top = targetRect.top - GAP - tooltipH + scrollY;
-      left = Math.min(targetRect.left, vw - tooltipW - 16);
-      break;
     case "top-left":
-      top = targetRect.top - GAP - tooltipH + scrollY;
-      left = Math.max(16, targetRect.left + targetRect.width - tooltipW);
+      top = targetRect.top - GAP - tooltipHeight + scrollY;
+      left = targetCenterX - tooltipW / 2;
       break;
     case "left":
-      top = targetRect.top + scrollY;
+      top = targetCenterY - tooltipHeight / 2 + scrollY;
       left = targetRect.left - tooltipW - GAP;
       break;
     case "right":
-      top = targetRect.top + scrollY;
+      top = targetCenterY - tooltipHeight / 2 + scrollY;
       left = targetRect.left + targetRect.width + GAP;
       break;
     default:
       top = targetRect.top + targetRect.height + GAP + scrollY;
-      left = targetRect.left;
+      left = targetCenterX - tooltipW / 2;
   }
 
-  left = Math.max(16, Math.min(left, vw - tooltipW - 16));
-  const minTop = scrollY + 16;
-  const maxTop = scrollY + vh - tooltipH - 16;
-  if (top < minTop) top = minTop;
-  if (top > maxTop) top = maxTop;
+  // Clamp horizontal — always visible
+  left = Math.max(MARGIN, Math.min(left, vw - tooltipW - MARGIN));
 
-  return { top, left };
+  // Clamp vertical — always in viewport
+  const minTop = scrollY + MARGIN;
+  const maxTop = scrollY + vh - tooltipHeight - MARGIN;
+  top = Math.max(minTop, Math.min(top, maxTop));
+
+  return { top, left, width: tooltipW };
 }
 
 export default function OnboardingTour() {
@@ -78,16 +122,28 @@ export default function OnboardingTour() {
   } = useTour();
   const [targetRect, setTargetRect] = useState<TooltipRect | null>(null);
   const [mounted, setMounted] = useState(false);
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [tooltipHeight, setTooltipHeight] = useState(220);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    setIsMobile(window.innerWidth < 768);
+  }, []);
 
   const step = steps[currentStep];
+
+  // Measure actual tooltip height after render
+  useEffect(() => {
+    if (!tooltipRef.current) return;
+    const h = tooltipRef.current.offsetHeight;
+    if (h > 0 && h !== tooltipHeight) setTooltipHeight(h);
+  });
 
   const updateRect = useCallback(() => {
     if (!step?.target) return;
     const rect = getTargetRect(step.target);
-    if (rect) setTargetRect(rect);
+    setTargetRect(rect); // set even if null — so we can show fallback
   }, [step?.target]);
 
   useEffect(() => {
@@ -97,15 +153,39 @@ export default function OnboardingTour() {
       if (step.mobileSkip && isMobile) { nextStep(); return; }
       const el = document.querySelector(`[data-tour="${step.target}"]`);
       if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      // Poll for element — it may not exist yet after navigation
+      let elapsed = 0;
+      const interval = setInterval(() => {
+        elapsed += 100;
+        const r = getTargetRect(step.target!);
+        if (r) {
+          setTargetRect(r);
+          clearInterval(interval);
+        } else if (elapsed >= 3000) {
+          // Element never appeared — show tooltip centered
+          setTargetRect(null);
+          clearInterval(interval);
+        }
+      }, 100);
+      // Initial check after scroll settles
       const t = setTimeout(updateRect, 400);
-      return () => clearTimeout(t);
+      return () => { clearTimeout(t); clearInterval(interval); };
     }
   }, [isActive, step, updateRect, nextStep, isMobile]);
 
   useEffect(() => {
-    const handler = () => updateRect();
+    let ticking = false;
+    const handler = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        updateRect();
+        setIsMobile(window.innerWidth < 768);
+        ticking = false;
+      });
+    };
     window.addEventListener("resize", handler);
-    window.addEventListener("scroll", handler);
+    window.addEventListener("scroll", handler, { passive: true });
     return () => { window.removeEventListener("resize", handler); window.removeEventListener("scroll", handler); };
   }, [updateRect]);
 
@@ -140,24 +220,36 @@ export default function OnboardingTour() {
 
   const overlayContent = (
     <div className="fixed inset-0 z-[9999]" dir="rtl">
-      {/* Dark overlay */}
+      {/* Dark overlay with spotlight cutout */}
       {isCentered || !targetRect ? (
         <div className="absolute inset-0 bg-black/60 tour-fade-in" />
       ) : (
-        <>
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(0,0,0,0.55)" }} />
-          <div
-            className="absolute rounded-xl pointer-events-none"
-            style={{
-              top: targetRect.top - 6,
-              left: targetRect.left - 6,
-              width: targetRect.width + 12,
-              height: targetRect.height + 12,
-              boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)",
-              border: "2px solid rgba(255,255,255,0.3)",
-            }}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh" }}>
+          <defs>
+            <mask id="tour-spotlight-mask">
+              <rect x="0" y="0" width="100%" height="100%" fill="white" />
+              <rect
+                x={targetRect.left - 8}
+                y={targetRect.top - 8}
+                width={targetRect.width + 16}
+                height={targetRect.height + 16}
+                rx="12"
+                fill="black"
+              />
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100%" height="100%" fill="rgba(0,0,0,0.55)" mask="url(#tour-spotlight-mask)" />
+          <rect
+            x={targetRect.left - 8}
+            y={targetRect.top - 8}
+            width={targetRect.width + 16}
+            height={targetRect.height + 16}
+            rx="12"
+            fill="none"
+            stroke="rgba(255,255,255,0.3)"
+            strokeWidth="2"
           />
-        </>
+        </svg>
       )}
 
       {/* Navigating shimmer */}
@@ -283,14 +375,21 @@ export default function OnboardingTour() {
       {/* Tooltip for highlight steps */}
       {!isCentered && !showTOC && !isNavigating && (
         <div
-          className={`absolute bg-white shadow-2xl tour-slide-tooltip ${
-            isMobile ? "!fixed !bottom-0 !left-0 !right-0 rounded-t-3xl p-5" : "rounded-2xl p-5"
+          ref={tooltipRef}
+          className={`bg-white shadow-2xl tour-slide-tooltip ${
+            isMobile
+              ? "fixed bottom-0 left-0 right-0 rounded-t-3xl p-5 pb-8"
+              : "absolute rounded-2xl p-5"
           }`}
-          style={isMobile ? { zIndex: 10000, position: "fixed", bottom: 0, left: 0, right: 0, top: "auto" } : {
-            width: 320,
-            ...(targetRect ? calcTooltipStyle(targetRect, step.position ?? "bottom") : { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }),
-            zIndex: 10000,
-          }}
+          style={isMobile
+            ? { zIndex: 10000 }
+            : {
+              ...(targetRect
+                ? calcTooltipStyle(targetRect, step.position ?? "bottom", tooltipHeight)
+                : { position: "fixed" as const, top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: Math.min(320, window.innerWidth - 24) }),
+              zIndex: 10000,
+            }
+          }
         >
           {/* Chapter header + TOC button */}
           <div className="flex items-center justify-between mb-3">
