@@ -20,6 +20,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ success: false, error: "אין הרשאה" }, { status: 403 });
     }
 
+    if (!file.buffer) {
+      return NextResponse.json({ success: false, error: "קובץ לא זמין" }, { status: 404 });
+    }
+
     return new Response(file.buffer, {
       headers: {
         "Content-Type": file.mimeType,

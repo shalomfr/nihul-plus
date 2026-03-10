@@ -985,7 +985,8 @@ model FileUpload {
   originalName    String       @map("original_name")
   mimeType        String       @map("mime_type")
   fileSize        Int          @map("file_size")
-  filePath        String       @map("file_path")
+  filePath        String       @default("") @map("file_path")
+  fileData        Bytes?       @map("file_data")
   createdAt       DateTime     @default(now()) @map("created_at")
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
